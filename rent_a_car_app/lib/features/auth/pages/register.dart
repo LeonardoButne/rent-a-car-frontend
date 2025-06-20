@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:rent_a_car_app/features/auth/pages/otp_verification_screen.dart';
 
 class Register extends StatefulWidget {
   @override
@@ -207,6 +208,13 @@ class _RegisterState extends State<Register> {
                 child: ElevatedButton(
                   onPressed: () {
                     // Lógica de cadastro aqui
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) =>
+                            OTPVerificationScreen(email: 'rent_car@gmail.com'),
+                      ),
+                    );
                   },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Color(0xFF2D3E3F),
