@@ -3,6 +3,7 @@ import 'package:rent_a_car_app/core/services/car_service.dart';
 import 'package:rent_a_car_app/models/brand.dart';
 import 'package:rent_a_car_app/models/car.dart';
 import 'package:rent_a_car_app/widgets/car_card.dart';
+import 'filter_screen.dart';
 
 class SearchScreen extends StatefulWidget {
   const SearchScreen({super.key});
@@ -41,6 +42,32 @@ class _SearchScreenState extends State<SearchScreen> {
       recommendedCars = CarService.getRecommendedCars();
       popularCars = CarService.getPopularCars();
       brands = CarService.getBrands();
+    });
+  }
+
+  void _openFilters() async {
+    final result = await Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => const FiltersScreen()),
+    );
+
+    if (result != null) {
+      // Aplicar filtros recebidos
+      _applyFilters(result);
+    }
+  }
+
+  void _applyFilters(Map<String, dynamic> filters) {
+    // Implementar lógica de filtros
+    print('Filtros aplicados: $filters');
+
+    // como usar os filtros:
+    setState(() {
+      // Filtrar carros baseado nos critérios selecionados
+      if (filters['carType'] != 'All Cars') {
+        // Filtrar por tipo de carro
+      }
+      // Aplicar outros filtros...
     });
   }
 
@@ -146,7 +173,10 @@ class _SearchScreenState extends State<SearchScreen> {
         ),
         child: Row(
           children: [
-            const Icon(Icons.search, color: Colors.grey),
+            GestureDetector(
+              onTap: _openFilters,
+              child: Icon(Icons.tune, color: Colors.grey[400]),
+            ),
             const SizedBox(width: 12),
             Expanded(
               child: TextField(
