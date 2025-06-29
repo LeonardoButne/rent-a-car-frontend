@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 
 class VehicleRegistrationScreen extends StatefulWidget {
+  const VehicleRegistrationScreen({super.key});
+
   @override
   _VehicleRegistrationScreenState createState() =>
       _VehicleRegistrationScreenState();

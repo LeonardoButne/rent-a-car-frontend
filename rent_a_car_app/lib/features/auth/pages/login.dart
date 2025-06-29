@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:rent_a_car_app/features/auth/pages/register.dart';
 
 class Login extends StatefulWidget {
+  const Login({super.key});
+
   @override
   _LoginState createState() => _LoginState();
 }

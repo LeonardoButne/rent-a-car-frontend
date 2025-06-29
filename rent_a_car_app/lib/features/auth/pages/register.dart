@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:rent_a_car_app/features/auth/pages/otp_verification_screen.dart';
 
 class Register extends StatefulWidget {
+  const Register({super.key});
+
   @override
   _RegisterState createState() => _RegisterState();
 }
@@ -203,7 +205,7 @@ class _RegisterState extends State<Register> {
               SizedBox(height: 32),
 
               // Botão Cadastrar
-              Container(
+              SizedBox(
                 height: 56,
                 child: ElevatedButton(
                   onPressed: () {
@@ -237,7 +239,7 @@ class _RegisterState extends State<Register> {
               SizedBox(height: 16),
 
               // Botão Login
-              Container(
+              SizedBox(
                 height: 56,
                 child: OutlinedButton(
                   onPressed: () {
@@ -273,7 +275,7 @@ class _RegisterState extends State<Register> {
               SizedBox(height: 24),
 
               // Botão Google
-              Container(
+              SizedBox(
                 height: 56,
                 child: ElevatedButton.icon(
                   onPressed: () {

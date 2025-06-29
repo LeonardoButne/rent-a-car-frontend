@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:pinput/pinput.dart';
+import 'package:rent_a_car_app/features/auth/pages/home_screen.dart';
 
 class OTPVerificationScreen extends StatefulWidget {
   final String email;
 
-  const OTPVerificationScreen({Key? key, required this.email})
-    : super(key: key);
+  const OTPVerificationScreen({super.key, required this.email});
 
   @override
   State<OTPVerificationScreen> createState() => _OTPVerificationScreenState();
@@ -52,27 +52,31 @@ class _OTPVerificationScreenState extends State<OTPVerificationScreen> {
 
       // verificação do OTP
       if (pin == "123456") {
-        _showSuccessDialog();
+        _navigateToHome();
       } else {
         _showErrorDialog();
       }
     });
   }
 
-  void _showSuccessDialog() {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Sucesso'),
-        content: const Text('Código verificado com sucesso!'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('OK'),
-          ),
-        ],
+  // Substituiçõa do método _showSuccessDialog() por:
+  void _navigateToHome() {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Código verificado com sucesso!'),
+        backgroundColor: Colors.green,
+        duration: Duration(seconds: 1),
       ),
     );
+
+    // Aguarda um momento e navega para Home
+    Future.delayed(const Duration(milliseconds: 1500), () {
+      // Remove todas as telas anteriores e navega para Home
+      Navigator.of(context).pushAndRemoveUntil(
+        MaterialPageRoute(builder: (context) => const HomeScreen()),
+        (Route<dynamic> route) => false,
+      );
+    });
   }
 
   void _showErrorDialog() {

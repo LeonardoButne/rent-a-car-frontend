@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:rent_a_car_app/core/services/car_service.dart';
-import 'package:rent_a_car_app/features/auth/pages/seach_screen.dart';
+import 'package:rent_a_car_app/features/auth/pages/search_screen.dart';
 import 'package:rent_a_car_app/models/brand.dart';
 import 'package:rent_a_car_app/models/car.dart';
 import 'package:rent_a_car_app/widgets/brand_selector.dart';
