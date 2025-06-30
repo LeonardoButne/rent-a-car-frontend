@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:rent_a_car_app/core/services/car_service.dart';
+import 'package:rent_a_car_app/features/auth/pages/car_details_screen.dart';
 import 'package:rent_a_car_app/features/auth/pages/search_screen.dart';
 import 'package:rent_a_car_app/models/brand.dart';
 import 'package:rent_a_car_app/models/car.dart';
@@ -308,35 +309,9 @@ class _HomeScreenState extends State<HomeScreen> {
 
   /// Exibe detalhes do carro (placeholder)
   void _showCarDetails(Car car) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text(car.name),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text('Marca: ${car.brand}'),
-            Text('Preço: ${car.pricePerDay}/dia'),
-            Text('Localização: ${car.location}'),
-            Text('Avaliação: ${car.rating}'),
-            Text('Cadeiras: ${car.seats}'),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Fechar'),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              Navigator.pop(context);
-              // Implementar lógica de reserva
-            },
-            child: const Text('Reserve Agora'),
-          ),
-        ],
-      ),
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => CarDetailsScreen(car: car)),
     );
   }
 }
