@@ -116,7 +116,7 @@ class CarCard extends StatelessWidget {
               ),
             ],
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 2),
           Row(
             children: [
               Icon(Icons.location_on, color: Colors.grey[400], size: 16),
@@ -131,7 +131,7 @@ class CarCard extends StatelessWidget {
               ),
             ],
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 2),
           Padding(
             padding: const EdgeInsets.only(bottom: 4),
             child: Row(
@@ -139,22 +139,14 @@ class CarCard extends StatelessWidget {
                 Icon(
                   Icons.airline_seat_recline_normal,
                   color: Colors.grey[400],
-                  size: 14,
+                  size: 12,
                 ),
-                const SizedBox(width: 4),
+                const SizedBox(width: 2),
                 Text(
                   '${car.seats} Cadeiras',
                   style: TextStyle(fontSize: 10, color: Colors.grey[600]),
                 ),
                 const Spacer(),
-                Text(
-                  '${car.pricePerDay}/Dia',
-                  style: const TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.blue,
-                  ),
-                ),
               ],
             ),
           ),
