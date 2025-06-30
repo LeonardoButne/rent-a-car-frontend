@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:rent_a_car_app/core/services/car_service.dart';
 import 'package:rent_a_car_app/features/auth/pages/car_details_screen.dart';
+import 'package:rent_a_car_app/features/auth/pages/messages/chats_screen.dart';
+import 'package:rent_a_car_app/features/auth/pages/notifications/notification_screen.dart';
 import 'package:rent_a_car_app/features/auth/pages/profile/profile_screen.dart';
 import 'package:rent_a_car_app/features/auth/pages/search_screen.dart';
 import 'package:rent_a_car_app/models/brand.dart';
@@ -288,8 +290,44 @@ class _HomeScreenState extends State<HomeScreen> {
         children: [
           _buildNavItem(Icons.home, true),
           _buildNavItem(Icons.search, false),
-          _buildNavItem(Icons.mail_outline, false),
-          _buildNavItem(Icons.notifications_outlined, false),
+
+          //push para a tela de chats
+          GestureDetector(
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const ChatsScreen()),
+              );
+            },
+            child: Container(
+              padding: const EdgeInsets.all(12),
+              child: const Icon(
+                Icons.email,
+                color: Colors.white, // Destacado
+                size: 24,
+              ),
+            ),
+          ),
+
+          //push para tela de notificações
+          GestureDetector(
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const NotificationsScreen(),
+                ),
+              );
+            },
+            child: Container(
+              padding: const EdgeInsets.all(12),
+              child: const Icon(
+                Icons.notifications,
+                color: Colors.white, // Destacado
+                size: 24,
+              ),
+            ),
+          ),
           GestureDetector(
             onTap: () {
               Navigator.push(
