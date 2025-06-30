@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:rent_a_car_app/core/services/car_service.dart';
 import 'package:rent_a_car_app/features/auth/pages/car_details_screen.dart';
+import 'package:rent_a_car_app/features/auth/pages/profile/profile_screen.dart';
 import 'package:rent_a_car_app/features/auth/pages/search_screen.dart';
 import 'package:rent_a_car_app/models/brand.dart';
 import 'package:rent_a_car_app/models/car.dart';
@@ -289,7 +290,22 @@ class _HomeScreenState extends State<HomeScreen> {
           _buildNavItem(Icons.search, false),
           _buildNavItem(Icons.mail_outline, false),
           _buildNavItem(Icons.notifications_outlined, false),
-          _buildNavItem(Icons.person_outline, false),
+          GestureDetector(
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const ProfileScreen()),
+              );
+            },
+            child: Container(
+              padding: const EdgeInsets.all(12),
+              child: const Icon(
+                Icons.person,
+                color: Colors.white, // Destacado
+                size: 24,
+              ),
+            ),
+          ),
         ],
       ),
     );
