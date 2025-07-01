@@ -1,11 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:pinput/pinput.dart';
+import 'package:rent_a_car_app/core/services/api_service.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class OTPVerificationScreen extends StatefulWidget {
   final String email;
+  final bool isLoginOtp;
 
-  const OTPVerificationScreen({Key? key, required this.email})
-    : super(key: key);
+  const OTPVerificationScreen({
+    Key? key, 
+    required this.email,
+    this.isLoginOtp = false,
+  }) : super(key: key);
 
   @override
   State<OTPVerificationScreen> createState() => _OTPVerificationScreenState();
@@ -39,24 +45,91 @@ class _OTPVerificationScreenState extends State<OTPVerificationScreen> {
     return '${username.substring(0, 2)}***@$domain';
   }
 
-  void _onPinCompleted(String pin) {
+  Future<void> _verifyOtp(String pin) async {
     setState(() {
       _isLoading = true;
     });
-
-    // Simular verificação do OTP
-    Future.delayed(const Duration(seconds: 2), () {
+    try {
+      final api = ApiService();
+      
+      // Escolher endpoint baseado no tipo de OTP
+      final endpoint = widget.isLoginOtp ? '/client/login/verify-otp' : '/client/signup/confirm';
+      final payload = widget.isLoginOtp 
+          ? {'email': widget.email, 'otp': pin}
+          : {'email': widget.email, 'otp': pin};
+      
+      final response = await api.post(endpoint, payload);
+      print('Resposta OTP: ${response.data}');
+      print('Status: ${response.statusCode}');
+      
+      // Verificar se a resposta tem token
+      final responseData = response.data;
+      final token = responseData['token'];
+      
+      if (response.statusCode == 200 && token != null) {
+        // Salvar token localmente
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setString('auth_token', token);
+        // Navegar para tela principal
+        if (mounted) {
+          Navigator.of(context).pushReplacementNamed('/home');
+        }
+      } else {
+        print('Token não encontrado na resposta');
+        _showErrorDialog();
+      }
+    } catch (e) {
+      print('Erro na verificação: $e');
+      _showErrorDialog(message: 'Erro ao verificar código.');
+    } finally {
       setState(() {
         _isLoading = false;
       });
+    }
+  }
 
-      // verificação do OTP
-      if (pin == "123456") {
-        _showSuccessDialog();
-      } else {
-        _showErrorDialog();
-      }
+  void _onPinCompleted(String pin) {
+    if (pin.length == 6) {
+      _verifyOtp(pin);
+    }
+  }
+
+  Future<void> _resendOTP() async {
+    setState(() {
+      _isLoading = true;
     });
+    try {
+      final api = ApiService();
+      final response = await api.post('/client/resend-otp-client', {
+        'email': widget.email,
+      });
+      if (response.statusCode == 200) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Novo código enviado para o seu email'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Erro ao reenviar código'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Erro ao reenviar código'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    } finally {
+      setState(() {
+        _isLoading = false;
+      });
+    }
   }
 
   void _showSuccessDialog() {
@@ -75,12 +148,12 @@ class _OTPVerificationScreenState extends State<OTPVerificationScreen> {
     );
   }
 
-  void _showErrorDialog() {
+  void _showErrorDialog({String message = 'Código inválido. Tente novamente.'}) {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Erro'),
-        content: const Text('Código inválido. Tente novamente.'),
+        content: Text(message),
         actions: [
           TextButton(
             onPressed: () {
@@ -91,16 +164,6 @@ class _OTPVerificationScreenState extends State<OTPVerificationScreen> {
             child: const Text('OK'),
           ),
         ],
-      ),
-    );
-  }
-
-  void _resendOTP() {
-    // Implementar lógica de reenvio
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Novo código enviado para o seu email'),
-        backgroundColor: Colors.green,
       ),
     );
   }

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:rent_a_car_app/features/auth/pages/otp_verification_screen.dart';
+import 'package:rent_a_car_app/core/services/api_service.dart';
 
 class Register extends StatefulWidget {
   @override
@@ -13,9 +14,50 @@ class _RegisterState extends State<Register> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
+  final _telefoneController = TextEditingController();
 
   bool _isPasswordVisible = false;
   bool _isConfirmPasswordVisible = false;
+  bool _isLoading = false;
+  String? _errorMessage;
+
+  Future<void> _register() async {
+    setState(() {
+      _isLoading = true;
+      _errorMessage = null;
+    });
+    try {
+      final api = ApiService();
+      final response = await api.post('/client/signup', {
+        'name': _nomeController.text.trim(),
+        'lastName': _apelidoController.text.trim(),
+        'email': _emailController.text.trim(),
+        'password': _passwordController.text.trim(),
+        'passwordConfirm': _confirmPasswordController.text.trim(),
+        'telephone': _telefoneController.text.trim(),
+      });
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => OTPVerificationScreen(email: _emailController.text.trim()),
+          ),
+        );
+      } else {
+        setState(() {
+          _errorMessage = 'Erro ao cadastrar. Tente novamente.';
+        });
+      }
+    } catch (e) {
+      setState(() {
+        _errorMessage = 'Erro ao cadastrar: ' + e.toString();
+      });
+    } finally {
+      setState(() {
+        _isLoading = false;
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -133,6 +175,33 @@ class _RegisterState extends State<Register> {
 
               SizedBox(height: 16),
 
+              // Campo Telefone
+              Container(
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: Colors.grey[300]!),
+                ),
+                child: TextFormField(
+                  controller: _telefoneController,
+                  keyboardType: TextInputType.phone,
+                  decoration: InputDecoration(
+                    hintText: 'Telefone',
+                    hintStyle: TextStyle(color: Colors.grey[500]),
+                    border: InputBorder.none,
+                    contentPadding: EdgeInsets.all(16),
+                  ),
+                  validator: (value) {
+                    if (value == null || value.trim().isEmpty) {
+                      return 'Informe o telefone';
+                    }
+                    return null;
+                  },
+                ),
+              ),
+
+              SizedBox(height: 16),
+
               // Campo Senha
               Container(
                 decoration: BoxDecoration(
@@ -197,6 +266,15 @@ class _RegisterState extends State<Register> {
                       },
                     ),
                   ),
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'Confirme a senha';
+                    }
+                    if (value != _passwordController.text) {
+                      return 'As senhas não coincidem';
+                    }
+                    return null;
+                  },
                 ),
               ),
 
@@ -206,15 +284,10 @@ class _RegisterState extends State<Register> {
               Container(
                 height: 56,
                 child: ElevatedButton(
-                  onPressed: () {
-                    // Lógica de cadastro aqui
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) =>
-                            OTPVerificationScreen(email: 'rent_car@gmail.com'),
-                      ),
-                    );
+                  onPressed: _isLoading ? null : () async {
+                    if (_formKey.currentState!.validate()) {
+                      await _register();
+                    }
                   },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Color(0xFF2D3E3F),
@@ -233,6 +306,16 @@ class _RegisterState extends State<Register> {
                   ),
                 ),
               ),
+
+              if (_isLoading) ...[
+                SizedBox(height: 16),
+                Center(child: CircularProgressIndicator()),
+              ],
+
+              if (_errorMessage != null) ...[
+                SizedBox(height: 16),
+                Center(child: Text(_errorMessage!, style: TextStyle(color: Colors.red))),
+              ],
 
               SizedBox(height: 16),
 
@@ -346,6 +429,7 @@ class _RegisterState extends State<Register> {
     _emailController.dispose();
     _passwordController.dispose();
     _confirmPasswordController.dispose();
+    _telefoneController.dispose();
     super.dispose();
   }
 }
