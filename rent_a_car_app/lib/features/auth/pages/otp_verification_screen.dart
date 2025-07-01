@@ -1,17 +1,25 @@
 import 'package:flutter/material.dart';
 import 'package:pinput/pinput.dart';
+<<<<<<< HEAD
 import 'package:rent_a_car_app/core/services/api_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+=======
+import 'package:rent_a_car_app/features/auth/pages/home_screen.dart';
+>>>>>>> aae64c443f1b89ea9cc6e8b3fea27c9038c59148
 
 class OTPVerificationScreen extends StatefulWidget {
   final String email;
   final bool isLoginOtp;
 
+<<<<<<< HEAD
   const OTPVerificationScreen({
     Key? key, 
     required this.email,
     this.isLoginOtp = false,
   }) : super(key: key);
+=======
+  const OTPVerificationScreen({super.key, required this.email});
+>>>>>>> aae64c443f1b89ea9cc6e8b3fea27c9038c59148
 
   @override
   State<OTPVerificationScreen> createState() => _OTPVerificationScreenState();
@@ -88,6 +96,7 @@ class _OTPVerificationScreenState extends State<OTPVerificationScreen> {
     }
   }
 
+<<<<<<< HEAD
   void _onPinCompleted(String pin) {
     if (pin.length == 6) {
       _verifyOtp(pin);
@@ -97,6 +106,14 @@ class _OTPVerificationScreenState extends State<OTPVerificationScreen> {
   Future<void> _resendOTP() async {
     setState(() {
       _isLoading = true;
+=======
+      // verificação do OTP
+      if (pin == "123456") {
+        _navigateToHome();
+      } else {
+        _showErrorDialog();
+      }
+>>>>>>> aae64c443f1b89ea9cc6e8b3fea27c9038c59148
     });
     try {
       final api = ApiService();
@@ -132,20 +149,24 @@ class _OTPVerificationScreenState extends State<OTPVerificationScreen> {
     }
   }
 
-  void _showSuccessDialog() {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Sucesso'),
-        content: const Text('Código verificado com sucesso!'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('OK'),
-          ),
-        ],
+  // Substituiçõa do método _showSuccessDialog() por:
+  void _navigateToHome() {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Código verificado com sucesso!'),
+        backgroundColor: Colors.green,
+        duration: Duration(seconds: 1),
       ),
     );
+
+    // Aguarda um momento e navega para Home
+    Future.delayed(const Duration(milliseconds: 1500), () {
+      // Remove todas as telas anteriores e navega para Home
+      Navigator.of(context).pushAndRemoveUntil(
+        MaterialPageRoute(builder: (context) => const HomeScreen()),
+        (Route<dynamic> route) => false,
+      );
+    });
   }
 
   void _showErrorDialog({String message = 'Código inválido. Tente novamente.'}) {

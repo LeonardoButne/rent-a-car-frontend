@@ -4,6 +4,8 @@ import 'package:rent_a_car_app/features/auth/pages/otp_verification_screen.dart'
 import 'package:rent_a_car_app/core/services/api_service.dart';
 
 class Login extends StatefulWidget {
+  const Login({super.key});
+
   @override
   _LoginState createState() => _LoginState();
 }
