@@ -24,7 +24,7 @@ class RentalDetailsModal extends StatelessWidget {
           ),
           const SizedBox(height: 20),
           Text(
-            'Detalhes do Aluguel',
+            'Detalhes do Aluguel ',
             style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 20),
