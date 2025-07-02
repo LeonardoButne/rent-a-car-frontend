@@ -1,9 +1,15 @@
 import 'package:flutter/material.dart';
+import 'package:rent_a_car_app/core/models/car_model.dart';
 
 class DealerSection extends StatelessWidget {
   final VoidCallback onContact;
+  final CarOwner owner;
 
-  const DealerSection({super.key, required this.onContact});
+  const DealerSection({
+    super.key,
+    required this.onContact,
+    required this.owner,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -22,29 +28,36 @@ class DealerSection extends StatelessWidget {
             child: Icon(Icons.person, color: Colors.white),
           ),
           const SizedBox(width: 12),
-          const Expanded(
+          Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Kennu Elfeice',
-                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                  '${owner.name} ${owner.lastName}',
+                  style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 16,
+                  ),
                 ),
-                Text(
+                const Text(
                   'Revendedor verificado',
-                  style: TextStyle(color: Colors.grey, fontSize: 14),
+                  style: TextStyle(
+                    color: Colors.grey,
+                    fontSize: 14,
+                  ),
                 ),
               ],
             ),
           ),
-          Container(
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(8),
+          if (owner.telephone != null)
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: const Icon(Icons.phone, color: Colors.green),
             ),
-            child: const Icon(Icons.phone, color: Colors.green),
-          ),
           const SizedBox(width: 8),
           GestureDetector(
             onTap: onContact,

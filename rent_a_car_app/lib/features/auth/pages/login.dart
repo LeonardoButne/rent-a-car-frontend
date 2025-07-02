@@ -17,6 +17,12 @@ class _LoginState extends State<Login> {
   bool _obscurePassword = true;
   bool _isLoading = false;
   String? _errorMessage;
+  String _accountType = 'Cliente';
+  final Map<String, String> _accountTypeMap = {
+    'Cliente': 'client',
+    'Proprietário': 'owner',
+  };
+  final List<String> _accountTypes = ['Cliente', 'Proprietário'];
 
   Future<void> _login() async {
     setState(() {
@@ -26,19 +32,22 @@ class _LoginState extends State<Login> {
 
     try {
       final api = ApiService();
-      final response = await api.post('/client/login', {
+      final typeAccount = _accountTypeMap[_accountType]!;
+      final endpoint = typeAccount == 'owner' ? '/owner/login' : '/client/login';
+      final response = await api.post(endpoint, {
         'email': _emailController.text.trim(),
         'password': _passwordController.text.trim(),
+        'typeAccount': typeAccount,
       });
 
       if (response.statusCode == 200) {
-        // Login bem-sucedido, navegar para OTP de login
         Navigator.push(
           context,
           MaterialPageRoute(
             builder: (context) => OTPVerificationScreen(
               email: _emailController.text.trim(),
-              isLoginOtp: true, // Indicar que é OTP de login
+              isLoginOtp: true,
+              typeAccount: typeAccount,
             ),
           ),
         );
@@ -129,6 +138,25 @@ class _LoginState extends State<Login> {
                   SizedBox(height: 40),
 
                   // Campo de email
+                  SizedBox(height: 16),
+                  DropdownButtonFormField<String>(
+                    value: _accountType,
+                    items: _accountTypes.map((type) => DropdownMenuItem(
+                      value: type,
+                      child: Text(type),
+                    )).toList(),
+                    onChanged: (value) {
+                      setState(() {
+                        _accountType = value!;
+                      });
+                    },
+                    decoration: InputDecoration(
+                      labelText: 'Tipo de Conta',
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                      contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                    ),
+                  ),
+                  SizedBox(height: 16),
                   Container(
                     decoration: BoxDecoration(
                       color: Colors.white,

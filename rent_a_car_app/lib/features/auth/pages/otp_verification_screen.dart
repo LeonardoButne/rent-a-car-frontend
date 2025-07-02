@@ -1,25 +1,20 @@
 import 'package:flutter/material.dart';
 import 'package:pinput/pinput.dart';
-<<<<<<< HEAD
 import 'package:rent_a_car_app/core/services/api_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-=======
 import 'package:rent_a_car_app/features/auth/pages/home_screen.dart';
->>>>>>> aae64c443f1b89ea9cc6e8b3fea27c9038c59148
 
 class OTPVerificationScreen extends StatefulWidget {
   final String email;
   final bool isLoginOtp;
+  final String typeAccount; // 'client' ou 'owner'
 
-<<<<<<< HEAD
   const OTPVerificationScreen({
     Key? key, 
     required this.email,
     this.isLoginOtp = false,
+    required this.typeAccount,
   }) : super(key: key);
-=======
-  const OTPVerificationScreen({super.key, required this.email});
->>>>>>> aae64c443f1b89ea9cc6e8b3fea27c9038c59148
 
   @override
   State<OTPVerificationScreen> createState() => _OTPVerificationScreenState();
@@ -60,11 +55,18 @@ class _OTPVerificationScreenState extends State<OTPVerificationScreen> {
     try {
       final api = ApiService();
       
-      // Escolher endpoint baseado no tipo de OTP
-      final endpoint = widget.isLoginOtp ? '/client/login/verify-otp' : '/client/signup/confirm';
-      final payload = widget.isLoginOtp 
-          ? {'email': widget.email, 'otp': pin}
-          : {'email': widget.email, 'otp': pin};
+      // Escolher endpoint baseado no tipo de OTP e typeAccount
+      String endpoint;
+      if (widget.isLoginOtp) {
+        endpoint = widget.typeAccount == 'owner'
+            ? '/owner/login/verify-otp'
+            : '/client/login/verify-otp';
+      } else {
+        endpoint = widget.typeAccount == 'owner'
+            ? '/owner/signup/confirm'
+            : '/client/signup/confirm';
+      }
+      final payload = {'email': widget.email, 'otp': pin};
       
       final response = await api.post(endpoint, payload);
       print('Resposta OTP: ${response.data}');
@@ -78,9 +80,12 @@ class _OTPVerificationScreenState extends State<OTPVerificationScreen> {
         // Salvar token localmente
         final prefs = await SharedPreferences.getInstance();
         await prefs.setString('auth_token', token);
-        // Navegar para tela principal
+        // Navegar para nova HomeScreen
         if (mounted) {
-          Navigator.of(context).pushReplacementNamed('/home');
+          Navigator.of(context).pushAndRemoveUntil(
+            MaterialPageRoute(builder: (context) => const HomeScreen()),
+            (Route<dynamic> route) => false,
+          );
         }
       } else {
         print('Token não encontrado na resposta');
@@ -96,7 +101,6 @@ class _OTPVerificationScreenState extends State<OTPVerificationScreen> {
     }
   }
 
-<<<<<<< HEAD
   void _onPinCompleted(String pin) {
     if (pin.length == 6) {
       _verifyOtp(pin);
@@ -106,18 +110,13 @@ class _OTPVerificationScreenState extends State<OTPVerificationScreen> {
   Future<void> _resendOTP() async {
     setState(() {
       _isLoading = true;
-=======
-      // verificação do OTP
-      if (pin == "123456") {
-        _navigateToHome();
-      } else {
-        _showErrorDialog();
-      }
->>>>>>> aae64c443f1b89ea9cc6e8b3fea27c9038c59148
     });
     try {
       final api = ApiService();
-      final response = await api.post('/client/resend-otp-client', {
+      String endpoint = widget.typeAccount == 'owner'
+          ? '/owner/resend-otp-owner'
+          : '/client/resend-otp-client';
+      final response = await api.post(endpoint, {
         'email': widget.email,
       });
       if (response.statusCode == 200) {

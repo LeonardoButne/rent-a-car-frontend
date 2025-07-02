@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:rent_a_car_app/core/services/owner_service.dart';
+import 'package:image_picker/image_picker.dart';
+import 'dart:io';
 
 class VehicleRegistrationScreen extends StatefulWidget {
   const VehicleRegistrationScreen({super.key});
@@ -19,6 +22,7 @@ class _VehicleRegistrationScreenState extends State<VehicleRegistrationScreen> {
   final TextEditingController _descriptionController = TextEditingController();
   final TextEditingController _mileageController = TextEditingController();
   final TextEditingController _plateController = TextEditingController();
+  final TextEditingController _localizacaoController = TextEditingController();
 
   String selectedBrand = 'Toyota';
   String selectedClass = 'Económico';
@@ -29,6 +33,7 @@ class _VehicleRegistrationScreenState extends State<VehicleRegistrationScreen> {
   bool hasInsurance = false;
   bool isAvailable = true;
   bool termsAccepted = false;
+  bool _isLoading = false;
 
   final List<String> carBrands = [
     'Mazda',
@@ -64,6 +69,9 @@ class _VehicleRegistrationScreenState extends State<VehicleRegistrationScreen> {
   ];
   final List<String> fuelTypes = ['Eléctrico', 'Gasolina', 'Diesel', 'Híbrido'];
   final List<String> transmissions = ['Manual', 'Automática', 'CVT'];
+
+  List<XFile> _selectedImages = [];
+  final ImagePicker _picker = ImagePicker();
 
   @override
   Widget build(BuildContext context) {
@@ -133,27 +141,6 @@ class _VehicleRegistrationScreenState extends State<VehicleRegistrationScreen> {
             ),
 
             SizedBox(height: 20),
-
-            // ID da Viatura e ID do Proprietário
-            Row(
-              children: [
-                Expanded(
-                  child: _buildTextField(
-                    controller: _vehicleIdController,
-                    hint: 'ID da Viatura',
-                  ),
-                ),
-                SizedBox(width: 16),
-                Expanded(
-                  child: _buildTextField(
-                    controller: _ownerIdController,
-                    hint: 'ID do Proprietário',
-                  ),
-                ),
-              ],
-            ),
-
-            SizedBox(height: 16),
 
             // Marca e Modelo
             Row(
@@ -278,18 +265,66 @@ class _VehicleRegistrationScreenState extends State<VehicleRegistrationScreen> {
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(color: Colors.grey[300]!),
               ),
-              child: Row(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    'Carregar imagens da viatura',
-                    style: TextStyle(color: Colors.grey[600], fontSize: 16),
+                  Row(
+                    children: [
+                      Text(
+                        'Carregar imagens da viatura',
+                        style: TextStyle(color: Colors.grey[600], fontSize: 16),
+                      ),
+                      Spacer(),
+                      IconButton(
+                        icon: Icon(Icons.add_a_photo, color: Colors.blue),
+                        onPressed: _pickImages,
+                      ),
+                    ],
                   ),
-                  Spacer(),
-                  Icon(Icons.camera_alt, color: Colors.grey[400]),
-                  SizedBox(width: 12),
-                  Icon(Icons.image, color: Colors.grey[400]),
-                  SizedBox(width: 12),
-                  Icon(Icons.add_circle_outline, color: Colors.grey[400]),
+                  SizedBox(height: 8),
+                  _selectedImages.isEmpty
+                      ? Text('Nenhuma imagem selecionada', style: TextStyle(color: Colors.grey[400]))
+                      : SizedBox(
+                          height: 80,
+                          child: ListView.separated(
+                            scrollDirection: Axis.horizontal,
+                            itemCount: _selectedImages.length,
+                            separatorBuilder: (_, __) => SizedBox(width: 8),
+                            itemBuilder: (context, index) {
+                              return Stack(
+                                children: [
+                                  ClipRRect(
+                                    borderRadius: BorderRadius.circular(8),
+                                    child: Image.file(
+                                      File(_selectedImages[index].path),
+                                      width: 80,
+                                      height: 80,
+                                      fit: BoxFit.cover,
+                                    ),
+                                  ),
+                                  Positioned(
+                                    top: 2,
+                                    right: 2,
+                                    child: GestureDetector(
+                                      onTap: () {
+                                        setState(() {
+                                          _selectedImages.removeAt(index);
+                                        });
+                                      },
+                                      child: Container(
+                                        decoration: BoxDecoration(
+                                          color: Colors.black54,
+                                          shape: BoxShape.circle,
+                                        ),
+                                        child: Icon(Icons.close, color: Colors.white, size: 18),
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              );
+                            },
+                          ),
+                        ),
                 ],
               ),
             ),
@@ -314,6 +349,25 @@ class _VehicleRegistrationScreenState extends State<VehicleRegistrationScreen> {
                   ),
                 ),
               ],
+            ),
+
+            SizedBox(height: 16),
+            // Campo Localização
+            Container(
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: Colors.grey[300]!),
+              ),
+              child: TextField(
+                controller: _localizacaoController,
+                decoration: InputDecoration(
+                  hintText: 'Localização',
+                  hintStyle: TextStyle(color: Colors.grey[500]),
+                  border: InputBorder.none,
+                  contentPadding: EdgeInsets.all(16),
+                ),
+              ),
             ),
 
             SizedBox(height: 20),
@@ -541,11 +595,8 @@ class _VehicleRegistrationScreenState extends State<VehicleRegistrationScreen> {
               width: double.infinity,
               height: 56,
               child: ElevatedButton(
-                onPressed: termsAccepted
-                    ? () {
-                        // Lógica de submissão
-                        _submitVehicle();
-                      }
+                onPressed: termsAccepted && !_isLoading
+                    ? _submitVehicle
                     : null,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Color(0xFF2F3E3A),
@@ -563,6 +614,11 @@ class _VehicleRegistrationScreenState extends State<VehicleRegistrationScreen> {
                 ),
               ),
             ),
+
+            if (_isLoading) ...[
+              SizedBox(height: 16),
+              Center(child: CircularProgressIndicator()),
+            ],
 
             SizedBox(height: 40),
           ],
@@ -641,37 +697,84 @@ class _VehicleRegistrationScreenState extends State<VehicleRegistrationScreen> {
     }
   }
 
-  void _submitVehicle() {
-    // Aqui implementaria a lógica para enviar os dados
+  Future<void> _pickImages() async {
+    final List<XFile>? picked = await _picker.pickMultiImage(imageQuality: 80);
+    if (picked != null && picked.isNotEmpty) {
+      setState(() {
+        _selectedImages.addAll(picked);
+      });
+    }
+  }
+
+  void _submitVehicle() async {
+    setState(() { _isLoading = true; });
+    if (_localizacaoController.text.trim().isEmpty) {
+      setState(() { _isLoading = false; });
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Informe a localização do carro.'), backgroundColor: Colors.red),
+      );
+      return;
+    }
     Map<String, dynamic> vehicleData = {
-      'id': _vehicleIdController.text,
-      'ownerId': _ownerIdController.text,
-      'brand': selectedBrand,
-      'model': _modelController.text,
-      'year': int.tryParse(_yearController.text) ?? 0,
-      'dailyPrice': double.tryParse(_dailyPriceController.text) ?? 0.0,
-      'weeklyPrice': double.tryParse(_weeklyPriceController.text) ?? 0.0,
-      'monthlyPrice': double.tryParse(_monthlyPriceController.text) ?? 0.0,
-      'class': selectedClass,
-      'description': _descriptionController.text,
-      'color': selectedColor,
-      'fuelType': selectedFuelType,
-      'mileage': int.tryParse(_mileageController.text) ?? 0,
-      'seats': selectedSeats,
-      'hasInsurance': hasInsurance,
-      'isAvailable': isAvailable,
-      'plate': _plateController.text,
-      'transmission': selectedTransmission,
+      'marca': selectedBrand,
+      'modelo': _modelController.text,
+      'ano': int.tryParse(_yearController.text) ?? 0,
+      'precoPorDia': double.tryParse(_dailyPriceController.text) ?? 0.0,
+      'precoPorSemana': double.tryParse(_weeklyPriceController.text) ?? 0.0,
+      'precoPorMes': double.tryParse(_monthlyPriceController.text) ?? 0.0,
+      'classe': selectedClass,
+      'descricao': _descriptionController.text,
+      'cor': selectedColor,
+      'combustivel': selectedFuelType,
+      'quilometragem': int.tryParse(_mileageController.text) ?? 0,
+      'lugares': selectedSeats,
+      'transmissao': selectedTransmission,
+      'disponibilidade': isAvailable,
+      'seguro': hasInsurance,
+      'placa': _plateController.text,
+      'localizacao': _localizacaoController.text.trim(),
+      'categorias': '',
+      'featured': false,
     };
+    try {
+      final car = await OwnerService.createCar(
+        vehicleData,
+        _selectedImages.map((xfile) => File(xfile.path)).toList(),
+      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Viatura cadastrada com sucesso!'),
+            backgroundColor: Color(0xFF2F3E3A),
+          ),
+        );
+        Navigator.pop(context);
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Erro ao cadastrar viatura: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    } finally {
+      setState(() { _isLoading = false; });
+    }
+  }
 
-    print('Dados da viatura: $vehicleData');
-
-    // Mostrar confirmação
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('Viatura cadastrada com sucesso!'),
-        backgroundColor: Color(0xFF2F3E3A),
-      ),
-    );
+  @override
+  void dispose() {
+    _vehicleIdController.dispose();
+    _ownerIdController.dispose();
+    _modelController.dispose();
+    _yearController.dispose();
+    _dailyPriceController.dispose();
+    _weeklyPriceController.dispose();
+    _monthlyPriceController.dispose();
+    _descriptionController.dispose();
+    _mileageController.dispose();
+    _plateController.dispose();
+    _localizacaoController.dispose();
+    super.dispose();
   }
 }

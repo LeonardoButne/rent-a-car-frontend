@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:rent_a_car_app/features/auth/pages/login.dart';
-import 'package:rent_a_car_app/features/cars/pages/home_screen.dart';
+import 'package:rent_a_car_app/features/auth/pages/home_screen.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 

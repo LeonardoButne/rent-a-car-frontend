@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:rent_a_car_app/features/auth/pages/profile/edit_profile_screen.dart';
 import 'package:rent_a_car_app/models/profile_menu_item.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:jwt_decoder/jwt_decoder.dart';
+import 'package:rent_a_car_app/features/auth/pages/vehicle_registration_screen.dart';
+import 'package:rent_a_car_app/features/auth/pages/owner_reservations_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -10,10 +14,29 @@ class ProfileScreen extends StatefulWidget {
 }
 
 class _ProfileScreenState extends State<ProfileScreen> {
-  // Dados simulados do usuário
-  final String userName = 'Enu';
-  final String userEmail = 'Enu@gmail.com';
+  String userName = '';
+  String userEmail = '';
+  String typeAccount = '';
   final String userAvatar = 'assets/avatars/enu.jpg';
+
+  @override
+  void initState() {
+    super.initState();
+    _loadUserData();
+  }
+
+  Future<void> _loadUserData() async {
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString('auth_token');
+    if (token != null && token.isNotEmpty) {
+      Map<String, dynamic> decodedToken = JwtDecoder.decode(token);
+      setState(() {
+        userName = decodedToken['name'] ?? decodedToken['username'] ?? '';
+        userEmail = decodedToken['email'] ?? '';
+        typeAccount = decodedToken['typeAccount'] ?? '';
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -22,6 +45,30 @@ class _ProfileScreenState extends State<ProfileScreen> {
       body: SafeArea(
         child: Column(
           children: [
+            if (typeAccount == 'owner')
+              Padding(
+                padding: const EdgeInsets.only(top: 16.0, left: 20, right: 20),
+                child: SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton.icon(
+                    icon: Icon(Icons.add, color: Colors.white),
+                    label: Text('Cadastrar Carro', style: TextStyle(color: Colors.white)),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.green[700],
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      padding: EdgeInsets.symmetric(vertical: 14),
+                    ),
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => VehicleRegistrationScreen(),
+                        ),
+                      );
+                    },
+                  ),
+                ),
+              ),
             _buildHeader(),
             Expanded(
               child: SingleChildScrollView(
@@ -175,6 +222,19 @@ class _ProfileScreenState extends State<ProfileScreen> {
           title: 'Notificações',
           onTap: _navigateToNotifications,
         ),
+        if (typeAccount == 'owner')
+          ProfileMenuItem(
+            icon: Icons.assignment,
+            title: 'Reservas Recebidas',
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => OwnerReservationsScreen(),
+                ),
+              );
+            },
+          ),
       ],
     );
   }
@@ -437,20 +497,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   /// Executa logout
-  void _performLogout() {
+  void _performLogout() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove('auth_token');
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(
         content: Text('Logout realizado com sucesso'),
         backgroundColor: Colors.green,
       ),
     );
-
     // Navegar para tela de login (substituir por sua LoginScreen)
-    // Navigator.pushAndRemoveUntil(
-    //   context,
-    //   MaterialPageRoute(builder: (context) => const LoginScreen()),
-    //   (route) => false,
-    // );
+    Navigator.of(context).pushNamedAndRemoveUntil('/login', (route) => false);
   }
 
   /// Mostra mensagem "Em breve"

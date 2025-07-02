@@ -9,11 +9,20 @@ class ApiService {
       receiveTimeout: const Duration(seconds: 5),
     ),
   );
-  Future<Response> get(String path) async {
-    return await _dio.get(path);
+
+  Future<Response> get(String path, {Map<String, dynamic>? headers}) async {
+    return await _dio.get(path, options: Options(headers: headers));
   }
 
-  Future<Response> post(String path, dynamic data) async {
-    return await _dio.post(path, data: data);
+  Future<Response> post(String path, dynamic data, {Map<String, dynamic>? headers}) async {
+    return await _dio.post(path, data: data, options: Options(headers: headers));
+  }
+
+  Future<Response> patch(String path, dynamic data, {Map<String, dynamic>? headers}) async {
+    return await _dio.patch(path, data: data, options: Options(headers: headers));
+  }
+
+  Future<Response> delete(String path, {Map<String, dynamic>? headers}) async {
+    return await _dio.delete(path, options: Options(headers: headers));
   }
 }

@@ -3,6 +3,7 @@ import 'package:rent_a_car_app/core/services/car_service.dart';
 import 'package:rent_a_car_app/models/brand.dart';
 import 'package:rent_a_car_app/models/car.dart';
 import 'package:rent_a_car_app/widgets/car_card.dart';
+import '../../../core/models/car_model.dart';
 import 'filter_screen.dart';
 
 class SearchScreen extends StatefulWidget {
@@ -15,9 +16,9 @@ class SearchScreen extends StatefulWidget {
 class _SearchScreenState extends State<SearchScreen> {
   // Controladores e estado
   final TextEditingController _searchController = TextEditingController();
-  List<Car> searchResults = [];
-  List<Car> recommendedCars = [];
-  List<Car> popularCars = [];
+  List<ApiCar> searchResults = [];
+  List<ApiCar> recommendedCars = [];
+  List<ApiCar> popularCars = [];
   List<Brand> brands = [];
   String? selectedFilter;
   bool isSearching = false;
@@ -469,20 +470,19 @@ class _SearchScreenState extends State<SearchScreen> {
   }
 
   /// Exibe detalhes do carro (placeholder)
-  void _showCarDetails(Car car) {
+  void _showCarDetails(ApiCar car) {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text(car.name),
+        title: Text(car.marca),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Marca: ${car.brand}'),
-            Text('Preço: ${car.pricePerDay}/dia'),
-            Text('Localização: ${car.location}'),
-            Text('Avaliação: ${car.rating}'),
-            Text('Cadeiras: ${car.seats}'),
+            Text('Marca: ${car.marca}'),
+            Text('Preço: ${car.precoPorDia}/dia'),
+            Text('Localização: ${car.localizacao}'),
+            Text('Cadeiras: ${car.lugares}'),
           ],
         ),
         actions: [
@@ -508,10 +508,10 @@ class _SearchScreenState extends State<SearchScreen> {
   }
 
   /// Exibe confirmação de reserva
-  void _showBookingConfirmation(Car car) {
+  void _showBookingConfirmation(ApiCar car) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text('${car.name} Aluguer iniciado!'),
+        content: Text('${car.marca} Aluguer iniciado!'),
         backgroundColor: Colors.green,
         duration: const Duration(seconds: 2),
       ),

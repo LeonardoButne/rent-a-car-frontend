@@ -35,16 +35,20 @@ class _CarImageGalleryState extends State<CarImageGallery> {
             },
             itemCount: widget.images.length,
             itemBuilder: (context, index) {
+              final imageUrl = widget.images[index];
               return Container(
                 decoration: BoxDecoration(
                   color: Colors.grey[100],
                   borderRadius: BorderRadius.circular(16),
                 ),
-                child: Center(
-                  child: Icon(
-                    Icons.directions_car,
-                    size: 80,
-                    color: Colors.grey[400],
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(16),
+                  child: Image.network(
+                    imageUrl,
+                    fit: BoxFit.cover,
+                    errorBuilder: (context, error, stackTrace) => Center(
+                      child: Icon(Icons.directions_car, size: 80, color: Colors.grey[400]),
+                    ),
                   ),
                 ),
               );

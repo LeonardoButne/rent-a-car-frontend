@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
+import '../../core/models/car_model.dart';
+import '../../features/auth/pages/home_screen.dart'; // Para ApiCar
 import 'package:rent_a_car_app/widgets/car%20details/feature_item.dart';
-import '../../models/car.dart';
 
 class CarFeaturesSection extends StatelessWidget {
-  final Car car;
+  final ApiCar car;
 
   const CarFeaturesSection({super.key, required this.car});
 
@@ -25,21 +26,21 @@ class CarFeaturesSection extends StatelessWidget {
                 child: FeatureItem(
                   icon: Icons.airline_seat_recline_normal,
                   title: 'Capacidade',
-                  value: '${car.seats} Assentos',
+                  value: '${car.lugares} Assentos',
                 ),
               ),
               Expanded(
                 child: FeatureItem(
                   icon: Icons.speed,
-                  title: 'Saída de Cruzeiro',
-                  value: '670 HP',
+                  title: 'Quilometragem',
+                  value: '${car.quilometragem} km',
                 ),
               ),
               Expanded(
                 child: FeatureItem(
                   icon: Icons.flash_on,
-                  title: 'Velocidade Máx',
-                  value: '250km/h',
+                  title: 'Combustível',
+                  value: car.combustivel,
                 ),
               ),
             ],
@@ -50,22 +51,22 @@ class CarFeaturesSection extends StatelessWidget {
               Expanded(
                 child: FeatureItem(
                   icon: Icons.settings,
-                  title: 'Avançado',
-                  value: 'Autopiloto',
+                  title: 'Transmissão',
+                  value: car.transmissao,
                 ),
               ),
               Expanded(
                 child: FeatureItem(
-                  icon: Icons.battery_charging_full,
-                  title: 'Carga Única',
-                  value: '405 Milhas',
+                  icon: Icons.color_lens,
+                  title: 'Cor',
+                  value: car.cor,
                 ),
               ),
               Expanded(
                 child: FeatureItem(
-                  icon: Icons.local_parking,
-                  title: 'Avançado',
-                  value: 'Estacionamento Automático',
+                  icon: Icons.class_,
+                  title: 'Classe',
+                  value: car.classe,
                 ),
               ),
             ],

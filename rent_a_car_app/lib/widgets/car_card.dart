@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
+import '../core/models/car_model.dart';
 import '../models/car.dart';
 
 ///informações de um carro em formato de card
 class CarCard extends StatelessWidget {
-  final Car car;
+  final ApiCar car;
   final VoidCallback? onTap;
   final VoidCallback? onFavorite;
   final bool isFavorite;
@@ -57,7 +58,7 @@ class CarCard extends StatelessWidget {
           ClipRRect(
             borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
             child: Image.asset(
-              car.imageUrl,
+              car.images.first,
               width: double.infinity,
               height: double.infinity,
               fit: BoxFit.cover,
@@ -98,24 +99,24 @@ class CarCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            car.name,
+            car.marca,
             style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
           ),
-          const SizedBox(height: 4),
-          Row(
-            children: [
-              Icon(Icons.star, color: Colors.amber, size: 16),
-              const SizedBox(width: 4),
-              Text(
-                car.rating.toString(),
-                style: TextStyle(fontSize: 14, color: Colors.grey[600]),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-              ),
-            ],
-          ),
+          // const SizedBox(height: 4),
+          // Row(
+          //   children: [
+          //     Icon(Icons.star, color: Colors.amber, size: 16),
+          //     const SizedBox(width: 4),
+          //     Text(
+          //       car.rating.toString(),
+          //       style: TextStyle(fontSize: 14, color: Colors.grey[600]),
+          //       maxLines: 1,
+          //       overflow: TextOverflow.ellipsis,
+          //     ),
+          //   ],
+          // ),
           const SizedBox(height: 2),
           Row(
             children: [
@@ -123,7 +124,7 @@ class CarCard extends StatelessWidget {
               const SizedBox(width: 4),
               Expanded(
                 child: Text(
-                  car.location,
+                  car.localizacao,
                   style: TextStyle(fontSize: 12, color: Colors.grey[600]),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
@@ -143,7 +144,7 @@ class CarCard extends StatelessWidget {
                 ),
                 const SizedBox(width: 2),
                 Text(
-                  '${car.seats} Cadeiras',
+                  '${car.lugares} Cadeiras',
                   style: TextStyle(fontSize: 10, color: Colors.grey[600]),
                 ),
                 const Spacer(),

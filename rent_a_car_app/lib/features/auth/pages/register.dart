@@ -17,11 +17,19 @@ class _RegisterState extends State<Register> {
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
   final _telefoneController = TextEditingController();
+  final _enderecoController = TextEditingController();
+  final _pacoteController = TextEditingController();
 
   bool _isPasswordVisible = false;
   bool _isConfirmPasswordVisible = false;
   bool _isLoading = false;
   String? _errorMessage;
+  String _accountType = 'Cliente';
+  final Map<String, String> _accountTypeMap = {
+    'Cliente': 'client',
+    'Proprietário': 'owner',
+  };
+  final List<String> _accountTypes = ['Cliente', 'Proprietário'];
 
   Future<void> _register() async {
     setState(() {
@@ -30,19 +38,38 @@ class _RegisterState extends State<Register> {
     });
     try {
       final api = ApiService();
-      final response = await api.post('/client/signup', {
-        'name': _nomeController.text.trim(),
-        'lastName': _apelidoController.text.trim(),
-        'email': _emailController.text.trim(),
-        'password': _passwordController.text.trim(),
-        'passwordConfirm': _confirmPasswordController.text.trim(),
-        'telephone': _telefoneController.text.trim(),
-      });
+      final typeAccount = _accountTypeMap[_accountType]!;
+      final endpoint = typeAccount == 'owner' ? '/owner/signup' : '/client/signup';
+      final payload = typeAccount == 'owner'
+          ? {
+              'name': _nomeController.text.trim(),
+              'lastName': _apelidoController.text.trim(),
+              'email': _emailController.text.trim(),
+              'password': _passwordController.text.trim(),
+              'passwordConfirm': _confirmPasswordController.text.trim(),
+              'telephone': _telefoneController.text.trim(),
+              'address': _enderecoController.text.trim(),
+              'package': _pacoteController.text.trim(),
+              'typeAccount': typeAccount,
+            }
+          : {
+              'name': _nomeController.text.trim(),
+              'lastName': _apelidoController.text.trim(),
+              'email': _emailController.text.trim(),
+              'password': _passwordController.text.trim(),
+              'passwordConfirm': _confirmPasswordController.text.trim(),
+              'telephone': _telefoneController.text.trim(),
+              'typeAccount': typeAccount,
+            };
+      final response = await api.post(endpoint, payload);
       if (response.statusCode == 200 || response.statusCode == 201) {
         Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (context) => OTPVerificationScreen(email: _emailController.text.trim()),
+            builder: (context) => OTPVerificationScreen(
+              email: _emailController.text.trim(),
+              typeAccount: typeAccount,
+            ),
           ),
         );
       } else {
@@ -107,6 +134,26 @@ class _RegisterState extends State<Register> {
               ),
 
               SizedBox(height: 40),
+
+              // Dropdown Tipo de Conta
+              DropdownButtonFormField<String>(
+                value: _accountType,
+                items: _accountTypes.map((type) => DropdownMenuItem(
+                  value: type,
+                  child: Text(type),
+                )).toList(),
+                onChanged: (value) {
+                  setState(() {
+                    _accountType = value!;
+                  });
+                },
+                decoration: InputDecoration(
+                  labelText: 'Tipo de Conta',
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                  contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                ),
+              ),
+              SizedBox(height: 24),
 
               // Campo Nome
               Row(
@@ -201,6 +248,35 @@ class _RegisterState extends State<Register> {
                   },
                 ),
               ),
+
+              SizedBox(height: 16),
+
+              // Campo Endereço
+              if (_accountType == 'Proprietário') ...[
+                SizedBox(height: 16),
+                Container(
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: Colors.grey[300]!),
+                  ),
+                  child: TextFormField(
+                    controller: _enderecoController,
+                    decoration: InputDecoration(
+                      hintText: 'Endereço',
+                      hintStyle: TextStyle(color: Colors.grey[500]),
+                      border: InputBorder.none,
+                      contentPadding: EdgeInsets.all(16),
+                    ),
+                    validator: (value) {
+                      if (_accountType == 'Proprietário' && (value == null || value.trim().isEmpty)) {
+                        return 'Informe o endereço';
+                      }
+                      return null;
+                    },
+                  ),
+                ),
+              ],
 
               SizedBox(height: 16),
 
@@ -432,6 +508,8 @@ class _RegisterState extends State<Register> {
     _passwordController.dispose();
     _confirmPasswordController.dispose();
     _telefoneController.dispose();
+    _enderecoController.dispose();
+    _pacoteController.dispose();
     super.dispose();
   }
 }

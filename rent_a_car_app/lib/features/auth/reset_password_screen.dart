@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'phone_verification_screen.dart';
 
 /// Tela para reset de senha
 class ResetPasswordScreen extends StatefulWidget {
@@ -67,12 +66,12 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
       );
 
       // Navegar para verificação de telefone (simulando fluxo)
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(
-          builder: (context) => const PhoneVerificationScreen(),
-        ),
-      );
+      // Navigator.pushReplacement(
+      //   context,
+      //   MaterialPageRoute(
+      //     builder: (context) => const PhoneVerificationScreen(),
+      //   ),
+      // );
     });
   }
 

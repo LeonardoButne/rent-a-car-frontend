@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
-import '../../models/car.dart';
+import '../../core/models/car_model.dart';
+import '../../features/auth/pages/home_screen.dart'; // Para ApiCar
 
 class CarInfoSection extends StatelessWidget {
-  final Car car;
+  final ApiCar car;
 
   const CarInfoSection({super.key, required this.car});
 
@@ -17,32 +18,20 @@ class CarInfoSection extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                car.name,
+                car.modelo,
                 style: const TextStyle(
                   fontSize: 24,
                   fontWeight: FontWeight.bold,
                 ),
               ),
-              Row(
-                children: [
-                  const Icon(Icons.star, color: Colors.amber, size: 16),
-                  const SizedBox(width: 4),
-                  Text(
-                    car.rating.toString(),
-                    style: const TextStyle(fontWeight: FontWeight.w600),
-                  ),
-                ],
-              ),
+              // Remover rating se não existir em ApiCar
             ],
           ),
           const SizedBox(height: 8),
-          Text(
-            '(120+ Avaliações)',
-            style: TextStyle(color: Colors.grey[600], fontSize: 14),
-          ),
+          // Remover avaliações se não existir em ApiCar
           const SizedBox(height: 16),
           Text(
-            'Um carro com altas especificações que são alugados por um preço acessível.',
+            car.descricao,
             style: TextStyle(
               color: Colors.grey[700],
               fontSize: 16,
