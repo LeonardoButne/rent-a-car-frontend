@@ -105,6 +105,7 @@ class ApiCar {
   final String localizacao;
   final String seguro;
   final String placa;
+  final String serviceType;
   final DateTime createdAt;
   final DateTime updatedAt;
   final DateTime? deletedAt;
@@ -133,6 +134,7 @@ class ApiCar {
     required this.localizacao,
     required this.seguro,
     required this.placa,
+    required this.serviceType,
     required this.createdAt,
     required this.updatedAt,
     this.deletedAt,
@@ -163,6 +165,7 @@ class ApiCar {
       localizacao: json['localizacao'],
       seguro: json['seguro'],
       placa: json['placa'],
+      serviceType: json['serviceType'] ?? '',
       createdAt: DateTime.parse(json['createdAt']),
       updatedAt: DateTime.parse(json['updatedAt']),
       deletedAt: json['deletedAt'] != null ? DateTime.parse(json['deletedAt']) : null,
@@ -194,6 +197,7 @@ class ApiCar {
       'localizacao': localizacao,
       'seguro': seguro,
       'placa': placa,
+      'serviceType': serviceType,
       'createdAt': createdAt.toIso8601String(),
       'updatedAt': updatedAt.toIso8601String(),
       'deletedAt': deletedAt?.toIso8601String(),

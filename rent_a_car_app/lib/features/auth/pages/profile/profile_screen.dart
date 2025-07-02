@@ -30,8 +30,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final token = prefs.getString('auth_token');
     if (token != null && token.isNotEmpty) {
       Map<String, dynamic> decodedToken = JwtDecoder.decode(token);
+      final name = decodedToken['name'] ?? '';
+      final lastName = decodedToken['lastName'] ?? '';
       setState(() {
-        userName = decodedToken['name'] ?? decodedToken['username'] ?? '';
+        userName = (name + ' ' + lastName).trim();
         userEmail = decodedToken['email'] ?? '';
         typeAccount = decodedToken['typeAccount'] ?? '';
       });
@@ -45,30 +47,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
       body: SafeArea(
         child: Column(
           children: [
-            if (typeAccount == 'owner')
-              Padding(
-                padding: const EdgeInsets.only(top: 16.0, left: 20, right: 20),
-                child: SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton.icon(
-                    icon: Icon(Icons.add, color: Colors.white),
-                    label: Text('Cadastrar Carro', style: TextStyle(color: Colors.white)),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.green[700],
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                      padding: EdgeInsets.symmetric(vertical: 14),
-                    ),
-                    onPressed: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => VehicleRegistrationScreen(),
-                        ),
-                      );
-                    },
-                  ),
-                ),
-              ),
             _buildHeader(),
             Expanded(
               child: SingleChildScrollView(
@@ -222,7 +200,22 @@ class _ProfileScreenState extends State<ProfileScreen> {
           title: 'Notificações',
           onTap: _navigateToNotifications,
         ),
-        if (typeAccount == 'owner')
+        ProfileMenuItem(
+          icon: Icons.bookmark_outline,
+          title: 'Minhas Reservas Solicitadas',
+          onTap: _navigateToMyReservations,
+        ),
+        if (typeAccount == 'owner') ...[
+          ProfileMenuItem(
+            icon: Icons.add_circle_outline,
+            title: 'Cadastrar Carro',
+            onTap: _navigateToVehicleRegistration,
+          ),
+          ProfileMenuItem(
+            icon: Icons.directions_car_outlined,
+            title: 'Meus Carros',
+            onTap: _navigateToMyCars,
+          ),
           ProfileMenuItem(
             icon: Icons.assignment,
             title: 'Reservas Recebidas',
@@ -235,6 +228,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               );
             },
           ),
+        ],
       ],
     );
   }
@@ -404,6 +398,23 @@ class _ProfileScreenState extends State<ProfileScreen> {
     _showComingSoon('Configurações de Notificações');
   }
 
+  void _navigateToMyReservations() {
+    _showComingSoon('Minhas Reservas Solicitadas');
+  }
+
+  void _navigateToVehicleRegistration() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => VehicleRegistrationScreen(),
+      ),
+    );
+  }
+
+  void _navigateToMyCars() {
+    _showComingSoon('Meus Carros');
+  }
+
   void _navigateToSettings() {
     _showComingSoon('Configurações');
   }
@@ -514,7 +525,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   void _showComingSoon(String feature) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text('$feature em breve!'),
+        content: Text('$feature brevemente!'),
         duration: const Duration(seconds: 2),
       ),
     );
