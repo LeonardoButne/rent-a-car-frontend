@@ -34,6 +34,8 @@ class _VehicleRegistrationScreenState extends State<VehicleRegistrationScreen> {
   bool isAvailable = true;
   bool termsAccepted = false;
   bool _isLoading = false;
+  String _serviceType = '';
+  final List<String> _serviceTypes = ['Logística', 'Aluguer'];
 
   final List<String> carBrands = [
     'Mazda',
@@ -590,6 +592,32 @@ class _VehicleRegistrationScreenState extends State<VehicleRegistrationScreen> {
 
             SizedBox(height: 32),
 
+            // Tipo de Serviço
+            SizedBox(height: 16),
+            DropdownButtonFormField<String>(
+              value: _serviceType.isNotEmpty ? _serviceType : null,
+              items: _serviceTypes.map((type) => DropdownMenuItem(
+                value: type,
+                child: Text(type),
+              )).toList(),
+              onChanged: (value) {
+                setState(() {
+                  _serviceType = value!;
+                });
+              },
+              decoration: InputDecoration(
+                labelText: 'Tipo de Serviço',
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              ),
+              validator: (value) {
+                if (value == null || value.isEmpty) {
+                  return 'Selecione o tipo de serviço';
+                }
+                return null;
+              },
+            ),
+
             // Botão Submit
             SizedBox(
               width: double.infinity,
@@ -715,6 +743,13 @@ class _VehicleRegistrationScreenState extends State<VehicleRegistrationScreen> {
       );
       return;
     }
+    if (_serviceType.isEmpty) {
+      setState(() { _isLoading = false; });
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Selecione o tipo de serviço.'), backgroundColor: Colors.red),
+      );
+      return;
+    }
     Map<String, dynamic> vehicleData = {
       'marca': selectedBrand,
       'modelo': _modelController.text,
@@ -735,6 +770,7 @@ class _VehicleRegistrationScreenState extends State<VehicleRegistrationScreen> {
       'localizacao': _localizacaoController.text.trim(),
       'categorias': '',
       'featured': false,
+      'serviceType': _serviceType,
     };
     try {
       final car = await OwnerService.createCar(

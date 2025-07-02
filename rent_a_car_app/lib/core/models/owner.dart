@@ -52,6 +52,7 @@ class OwnerCar {
   final String localizacao;
   final String seguro;
   final String placa;
+  final String serviceType;
   final List<CarImage> images;
   OwnerCar({
     required this.id,
@@ -74,6 +75,7 @@ class OwnerCar {
     required this.localizacao,
     required this.seguro,
     required this.placa,
+    required this.serviceType,
     required this.images,
   });
   factory OwnerCar.fromJson(Map<String, dynamic> json) {
@@ -98,6 +100,7 @@ class OwnerCar {
       localizacao: json['localizacao'],
       seguro: json['seguro'],
       placa: json['placa'],
+      serviceType: json['serviceType'] ?? '',
       images: (json['images'] as List?)?.map((img) => CarImage.fromJson(img)).toList() ?? [],
     );
   }
