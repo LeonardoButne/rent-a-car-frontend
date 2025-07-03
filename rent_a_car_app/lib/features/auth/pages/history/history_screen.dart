@@ -3,9 +3,7 @@ import 'package:rent_a_car_app/core/services/history_service.dart';
 import 'package:rent_a_car_app/models/rental_history.dart';
 import 'package:rent_a_car_app/widgets/history/history_card.dart';
 import 'package:rent_a_car_app/widgets/history/loading_skeleton.dart';
-import 'package:rent_a_car_app/widgets/history/rental_details_modal.dart';
 
-/// Mostra lista de aluguéis passados, atuais e estatísticas
 class HistoryScreen extends StatefulWidget {
   const HistoryScreen({super.key});
 
@@ -264,7 +262,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
       itemBuilder: (context, index) {
         return HistoryCard(
           rental: filteredHistory[index],
-          onTap: () => _showRentalDetails(filteredHistory[index]),
+          // onTap: () => _showRentalDetails(filteredHistory[index]),
         );
       },
     );
@@ -419,14 +417,14 @@ class _HistoryScreenState extends State<HistoryScreen> {
   }
 
   /// Mostra detalhes do aluguel
-  void _showRentalDetails(RentalHistory rental) {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (context) => RentalDetailsModal(rental: rental),
-    );
-  }
+  // void _showRentalDetails(RentalHistory rental) {
+  //   showModalBottomSheet(
+  //     context: context,
+  //     isScrollControlled: true,
+  //     shape: const RoundedRectangleBorder(
+  //       borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+  //     ),
+  //     builder: (context) => RentalDetailsModal(rental: rental),
+  //   );
+  // }
 }

@@ -1,13 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:rent_a_car_app/features/auth/pages/car_details_screen.dart';
-import 'package:rent_a_car_app/features/auth/pages/messages/chats_screen.dart';
-import 'package:rent_a_car_app/features/auth/pages/notifications/notification_screen.dart';
 import 'package:rent_a_car_app/features/auth/pages/profile/profile_screen.dart';
 import 'package:rent_a_car_app/features/auth/pages/search_screen.dart';
 import 'package:rent_a_car_app/features/auth/pages/my_reservations_screen.dart';
+import 'dart:async';
+import 'dart:developer' as developer;
+import 'dart:io';
 
 import '../../../core/models/car_model.dart';
 import '../../../core/services/car_service.dart';
+import 'notifications/notification_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -18,7 +20,7 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   String? selectedBrand;
-  String selectedServiceType = 'aluguer'; // 'aluguer' ou 'logistica'
+  String selectedServiceType = 'aluguer';
   List<ApiCar> allCars = [];
   List<ApiCar> featuredCars = [];
   List<ApiCar> logisticsCars = [];
@@ -26,12 +28,18 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   List<ApiCar> recentCars = [];
   List<String> availableBrands = [];
   Set<String> favoriteCars = {};
+  List<ApiCar> generalCars = [];
+  List<ApiCar> filteredCars = [];
   bool isLoading = true;
   String? error;
   int selectedBottomIndex = 0;
   late TabController _serviceTabController;
   late AnimationController _animationController;
   late Animation<double> _fadeAnimation;
+
+  // Adicionando controle de operações assíncronas
+  Completer<void>? _loadDataCompleter;
+  Timer? _debounceTimer;
 
   final List<Map<String, dynamic>> quickActions = [
     {'icon': Icons.search, 'title': 'Pesquisar', 'color': Colors.black},
@@ -43,68 +51,232 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   @override
   void initState() {
     super.initState();
-    _serviceTabController = TabController(length: 2, vsync: this);
-    _animationController = AnimationController(
-      duration: const Duration(milliseconds: 800),
-      vsync: this,
-    );
-    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
-      CurvedAnimation(parent: _animationController, curve: Curves.easeInOut),
-    );
+    _initializeControllers();
     _loadData();
+  }
+
+  void _initializeControllers() {
+    try {
+      _serviceTabController = TabController(length: 2, vsync: this);
+      _animationController = AnimationController(
+        duration: const Duration(milliseconds: 800),
+        vsync: this,
+      );
+      _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+        CurvedAnimation(parent: _animationController, curve: Curves.easeInOut),
+      );
+    } catch (e) {
+      developer.log('Erro ao inicializar controllers: $e', name: 'HomeScreen');
+    }
   }
 
   @override
   void dispose() {
-    _serviceTabController.dispose();
-    _animationController.dispose();
+    try {
+      // Cancelar operações em andamento
+      _loadDataCompleter?.complete();
+      _debounceTimer?.cancel();
+
+      // Limpar controllers
+      _serviceTabController.dispose();
+      _animationController.dispose();
+
+      // Limpar listas para liberar memória
+      allCars.clear();
+      featuredCars.clear();
+      logisticsCars.clear();
+      nearbyCars.clear();
+      recentCars.clear();
+      availableBrands.clear();
+      favoriteCars.clear();
+      generalCars.clear();
+
+      developer.log('HomeScreen dispose concluído', name: 'HomeScreen');
+    } catch (e) {
+      developer.log('Erro durante dispose: $e', name: 'HomeScreen');
+    }
     super.dispose();
   }
 
   Future<void> _loadData() async {
+    // Cancelar carregamento anterior se ainda estiver em andamento
+    if (_loadDataCompleter != null && !_loadDataCompleter!.isCompleted) {
+      _loadDataCompleter!.complete();
+    }
+
+    _loadDataCompleter = Completer<void>();
+
     try {
+      developer.log('Iniciando carregamento de dados', name: 'HomeScreen');
+
+      if (!mounted) return;
+
       setState(() {
         isLoading = true;
         error = null;
       });
 
-      final cars = await CarService.getAllCars();
+      // Adicionar timeout para prevenir travamento
+      final cars = await CarService.getAllCars()
+          .timeout(const Duration(seconds: 15));
+
+      if (!mounted) return;
+
+      developer.log('${cars.length} carros carregados', name: 'HomeScreen');
+
+      final now = DateTime.now();
+      final cutoffDate = now.subtract(const Duration(days: 7));
+
+      // Verificar se o widget ainda está montado antes de cada operação
+      if (!mounted) return;
+
+      final processedData = _processCarData(cars, cutoffDate);
+
+      if (!mounted) return;
 
       setState(() {
         allCars = cars;
-        // Filtrar carros em destaque baseado no atributo 'featured'
-        featuredCars = cars.where((car) => car.featured == true).toList();
-        // Carros de logística (assumindo que há um campo serviceType ou similar)
-        logisticsCars = cars.where((car) => car.serviceType == 'logistica').toList();
-        nearbyCars = CarService.getCarsByLocation(cars, 'Maputo');
-        // Carros adicionados recentemente (últimos 5)
-        recentCars = cars.take(5).toList();
-        availableBrands = CarService.getUniqueBrands(cars);
+        featuredCars = processedData['featured'];
+        logisticsCars = processedData['logistics'];
+        nearbyCars = processedData['nearby'];
+        recentCars = processedData['recent'];
+        generalCars = processedData['general'];
+        availableBrands = processedData['brands'];
         isLoading = false;
       });
 
-      _animationController.forward();
-    } catch (e) {
+      if (!mounted) return;
+
+      // Iniciar animação com segurança
+      try {
+        await _animationController.forward();
+      } catch (e) {
+        developer.log('Erro na animação: $e', name: 'HomeScreen');
+      }
+
+      developer.log('Carregamento concluído com sucesso', name: 'HomeScreen');
+
+    } on TimeoutException {
+      if (!mounted) return;
+
+      developer.log('Timeout no carregamento de dados', name: 'HomeScreen');
+
       setState(() {
-        error = e.toString();
+        error = 'Timeout: Verifique sua conexão com a internet';
         isLoading = false;
       });
+    } catch (e, stackTrace) {
+      if (!mounted) return;
+
+      developer.log('Erro ao carregar dados: $e', name: 'HomeScreen', stackTrace: stackTrace);
+
+      setState(() {
+        error = _getErrorMessage(e);
+        isLoading = false;
+      });
+    } finally {
+      if (!_loadDataCompleter!.isCompleted) {
+        _loadDataCompleter!.complete();
+      }
+    }
+  }
+
+  Map<String, dynamic> _processCarData(List<ApiCar> cars, DateTime cutoffDate) {
+    try {
+      final featured = cars.where((car) => car.featured == true).toList();
+      final logistics = cars.where((car) => car.serviceType == 'logistica').toList();
+      final nearby = CarService.getCarsByLocation(cars, 'Maputo');
+
+      // Processamento seguro de carros recentes
+      final recent = cars.where((car) {
+        return car.createdAt?.isAfter(cutoffDate) ?? false;
+      }).take(10).toList();
+
+      final recentToUse = recent.isNotEmpty ? recent : cars.take(5).toList();
+
+      // Processamento seguro de carros gerais
+      final recentCarIds = recentToUse.map((car) => car.id).toSet();
+      final featuredCarIds = featured.map((car) => car.id).toSet();
+      final nearbyCarIds = nearby.map((car) => car.id).toSet();
+
+      final general = cars.where((car) {
+        return !recentCarIds.contains(car.id) &&
+            !featuredCarIds.contains(car.id) &&
+            !nearbyCarIds.contains(car.id) &&
+            car.serviceType != 'logistica';
+      }).toList();
+
+      final brands = CarService.getUniqueBrands(cars);
+
+      return {
+        'featured': featured,
+        'logistics': logistics,
+        'nearby': nearby,
+        'recent': recentToUse,
+        'general': general,
+        'brands': brands,
+      };
+    } catch (e) {
+      developer.log('Erro ao processar dados dos carros: $e', name: 'HomeScreen');
+      return {
+        'featured': <ApiCar>[],
+        'logistics': <ApiCar>[],
+        'nearby': <ApiCar>[],
+        'recent': <ApiCar>[],
+        'general': <ApiCar>[],
+        'brands': <String>[],
+      };
+    }
+  }
+
+  String _getErrorMessage(dynamic error) {
+    if (error is SocketException) {
+      return 'Sem conexão com a internet';
+    } else if (error is TimeoutException) {
+      return 'Timeout: Operação demorou muito para responder';
+    } else if (error is FormatException) {
+      return 'Erro no formato dos dados recebidos';
+    } else {
+      return 'Erro inesperado: ${error.toString()}';
+    }
+  }
+  void _applyBrandFilter() {
+    if (selectedBrand == null) {
+      // Se nenhuma marca selecionada, usar listas originais
+      filteredCars = [];
+    } else {
+      // Filtrar todos os carros pela marca selecionada
+      filteredCars = allCars.where((car) =>
+      car.marca.toLowerCase() == selectedBrand!.toLowerCase()
+      ).toList();
     }
   }
 
   void _onBrandSelected(String brand) {
-    setState(() {
-      selectedBrand = selectedBrand == brand ? null : brand;
+    if (!mounted) return;
+
+    _debounceTimer?.cancel();
+    _debounceTimer = Timer(const Duration(milliseconds: 300), () {
+      if (!mounted) return;
+
+      setState(() {
+        selectedBrand = selectedBrand == brand ? null : brand;
+        _applyBrandFilter();
+      });
     });
   }
 
   void _onServiceTypeChanged(String serviceType) {
+    if (!mounted) return;
+
     setState(() {
       selectedServiceType = serviceType;
     });
   }
 
   void _toggleFavorite(String carId) {
+    if (!mounted) return;
+
     setState(() {
       if (favoriteCars.contains(carId)) {
         favoriteCars.remove(carId);
@@ -113,21 +285,25 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       }
     });
 
-    // Animação de feedback
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          favoriteCars.contains(carId)
-              ? 'Adicionado aos favoritos!'
-              : 'Removido dos favoritos!',
+    // Feedback com verificação de contexto
+    if (mounted && context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            favoriteCars.contains(carId)
+                ? 'Adicionado aos favoritos!'
+                : 'Removido dos favoritos!',
+          ),
+          duration: const Duration(seconds: 1),
+          behavior: SnackBarBehavior.floating,
         ),
-        duration: const Duration(seconds: 1),
-        behavior: SnackBarBehavior.floating,
-      ),
-    );
+      );
+    }
   }
 
   void _navigateToSearch() {
+    if (!mounted || !context.mounted) return;
+
     Navigator.push(
       context,
       MaterialPageRoute(builder: (context) => const SearchScreen()),
@@ -135,6 +311,8 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   }
 
   void _onQuickActionTap(String action) {
+    if (!mounted) return;
+
     switch (action) {
       case 'Pesquisar':
         _navigateToSearch();
@@ -145,33 +323,52 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
         });
         break;
       case 'Histórico':
-        Navigator.push(context, MaterialPageRoute(builder: (context) => const MyReservationsScreen()));
+        if (context.mounted) {
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => const MyReservationsScreen()),
+          );
+        }
         break;
       case 'Favoritos':
-      // Navegar para tela de favoritos ou mostrar lista de carros favoritos
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Favoritos em desenvolvimento')),
-        );
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Favoritos em desenvolvimento')),
+          );
+        }
         break;
     }
   }
 
   void _onBottomNavTap(int index) {
+    if (!mounted) return;
+
     setState(() {
       selectedBottomIndex = index;
     });
+
+    if (!context.mounted) return;
 
     switch (index) {
       case 0:
         break;
       case 1:
-        Navigator.push(context, MaterialPageRoute(builder: (context) => const NotificationsScreen()));
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) => const NotificationsScreen()),
+        );
         break;
       case 2:
-        Navigator.push(context, MaterialPageRoute(builder: (context) => const ProfileScreen()));
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) => const ProfileScreen()),
+        );
         break;
       case 3:
-        Navigator.push(context, MaterialPageRoute(builder: (context) => const MyReservationsScreen()));
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) => const MyReservationsScreen()),
+        );
         break;
     }
   }
@@ -341,8 +538,12 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
           Expanded(
             child: GestureDetector(
               onTap: () {
-                _serviceTabController.animateTo(0);
-                _onServiceTypeChanged('aluguer');
+                try {
+                  _serviceTabController.animateTo(0);
+                  _onServiceTypeChanged('aluguer');
+                } catch (e) {
+                  developer.log('Erro ao mudar para aba aluguer: $e', name: 'HomeScreen');
+                }
               },
               child: Container(
                 height: double.infinity,
@@ -369,8 +570,12 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
           Expanded(
             child: GestureDetector(
               onTap: () {
-                _serviceTabController.animateTo(1);
-                _onServiceTypeChanged('logistica');
+                try {
+                  _serviceTabController.animateTo(1);
+                  _onServiceTypeChanged('logistica');
+                } catch (e) {
+                  developer.log('Erro ao mudar para aba logística: $e', name: 'HomeScreen');
+                }
               },
               child: Container(
                 height: double.infinity,
@@ -422,10 +627,17 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
             const SizedBox(height: 16),
             Text('Ops! Algo deu errado', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.grey[600])),
             const SizedBox(height: 8),
-            Text('Não foi possível carregar os veículos', style: TextStyle(fontSize: 16, color: Colors.grey[500])),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 40),
+              child: Text(
+                error!,
+                style: TextStyle(fontSize: 16, color: Colors.grey[500]),
+                textAlign: TextAlign.center,
+              ),
+            ),
             const SizedBox(height: 24),
             ElevatedButton.icon(
-              onPressed: _loadData,
+              onPressed: isLoading ? null : _loadData,
               icon: const Icon(Icons.refresh),
               label: const Text('Tentar novamente'),
               style: ElevatedButton.styleFrom(
@@ -455,30 +667,129 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                 _buildBrandsSection(),
                 const SizedBox(height: 25),
               ],
-              if (selectedServiceType == 'aluguer') ...[
-                if (featuredCars.isNotEmpty) ...[
-                  _buildFeaturedCarsSection(),
+
+              // Se uma marca estiver selecionada, mostrar apenas carros filtrados
+              if (selectedBrand != null) ...[
+                if (filteredCars.isNotEmpty) ...[
+                  _buildFilteredCarsSection(),
                   const SizedBox(height: 25),
-                ],
-                if (nearbyCars.isNotEmpty) ...[
-                  _buildNearbyCarsSection(),
-                  const SizedBox(height: 25),
-                ],
-                if (recentCars.isNotEmpty) ...[
-                  _buildRecentCarsSection(),
+                ] else ...[
+                  _buildNoResultsSection(),
                   const SizedBox(height: 25),
                 ],
               ] else ...[
-                if (logisticsCars.isNotEmpty) ...[
-                  _buildLogisticsCarsSection(),
-                  const SizedBox(height: 25),
+                // Mostrar seções normais quando nenhuma marca está selecionada
+                if (selectedServiceType == 'aluguer') ...[
+                  if (featuredCars.isNotEmpty) ...[
+                    _buildFeaturedCarsSection(),
+                    const SizedBox(height: 25),
+                  ],
+                  if (nearbyCars.isNotEmpty) ...[
+                    _buildNearbyCarsSection(),
+                    const SizedBox(height: 25),
+                  ],
+                  if (recentCars.isNotEmpty) ...[
+                    _buildRecentCarsSection(),
+                    const SizedBox(height: 25),
+                  ],
+                  if (generalCars.isNotEmpty) ...[
+                    _buildGeneralCarsSection(),
+                    const SizedBox(height: 25),
+                  ],
+                ] else ...[
+                  if (logisticsCars.isNotEmpty) ...[
+                    _buildLogisticsCarsSection(),
+                    const SizedBox(height: 25),
+                  ],
                 ],
               ],
+
               _buildPromotionalBanner(),
               const SizedBox(height: 100),
             ],
           ),
         ),
+      ),
+    );
+  }
+
+// Método para mostrar carros filtrados por marca
+  Widget _buildFilteredCarsSection() {
+    return Column(
+      children: [
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 20),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text('$selectedBrand (${filteredCars.length})',
+                  style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+              GestureDetector(
+                onTap: () => _onBrandSelected(selectedBrand!), // Remove filtro
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: Colors.red.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(15),
+                  ),
+                  child: const Text('Limpar', style: TextStyle(color: Colors.red, fontWeight: FontWeight.w600)),
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 16),
+        SizedBox(
+          height: 270,
+          child: ListView.builder(
+            scrollDirection: Axis.horizontal,
+            padding: const EdgeInsets.only(left: 20),
+            itemCount: filteredCars.length,
+            itemBuilder: (context, index) {
+              final car = filteredCars[index];
+              return _buildCarCard(car);
+            },
+          ),
+        ),
+      ],
+    );
+  }
+
+// Método para mostrar quando não há resultados
+  Widget _buildNoResultsSection() {
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 20),
+      padding: const EdgeInsets.all(40),
+      decoration: BoxDecoration(
+        color: Colors.grey.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.grey.withOpacity(0.2)),
+      ),
+      child: Column(
+        children: [
+          Icon(Icons.search_off, size: 64, color: Colors.grey[400]),
+          const SizedBox(height: 16),
+          Text(
+            'Nenhum carro encontrado',
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.grey[600]),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Não encontramos carros da marca $selectedBrand',
+            style: TextStyle(fontSize: 14, color: Colors.grey[500]),
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 16),
+          ElevatedButton(
+            onPressed: () => _onBrandSelected(selectedBrand!),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.grey[300],
+              foregroundColor: Colors.grey[700],
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+            ),
+            child: const Text('Ver todos os carros'),
+          ),
+        ],
       ),
     );
   }
@@ -604,7 +915,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   }
 
   Widget _buildFeaturedCarsSection() {
-    if (featuredCars.isEmpty) return const SizedBox();
+    if (featuredCars.isEmpty) return const SizedBox.shrink();
 
     return Column(
       children: [
@@ -787,6 +1098,38 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
             itemBuilder: (context, index) {
               final car = recentCars[index];
               return _buildCarCard(car, showNewBadge: true);
+            },
+          ),
+        ),
+      ],
+    );
+  }
+  Widget _buildGeneralCarsSection() {
+    return Column(
+      children: [
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 20),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Text('Outros Veículos', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+              GestureDetector(
+                onTap: () {},
+                child: const Text('Ver todos', style: TextStyle(color: Colors.blue, fontWeight: FontWeight.w600)),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 16),
+        SizedBox(
+          height: 270,
+          child: ListView.builder(
+            scrollDirection: Axis.horizontal,
+            padding: const EdgeInsets.only(left: 20),
+            itemCount: generalCars.length,
+            itemBuilder: (context, index) {
+              final car = generalCars[index];
+              return _buildCarCard(car);
             },
           ),
         ),
@@ -1062,17 +1405,17 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                           ),
                         ),
                         const SizedBox(width: 4),
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                          decoration: BoxDecoration(
-                            color: Colors.black,
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: const Text(
-                            'Ver',
-                            style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.w600),
-                          ),
-                        ),
+                        // Container(
+                        //   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        //   decoration: BoxDecoration(
+                        //     color: Colors.black,
+                        //     borderRadius: BorderRadius.circular(12),
+                        //   ),
+                        //   child: const Text(
+                        //     'Ver',
+                        //     style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.w600),
+                        //   ),
+                        // ),
                       ],
                     ),
                   ],
