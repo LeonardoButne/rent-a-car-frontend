@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import '../core/models/car_model.dart';
-import '../models/car.dart';
 
 ///informações de um carro em formato de card
 class CarCard extends StatelessWidget {
