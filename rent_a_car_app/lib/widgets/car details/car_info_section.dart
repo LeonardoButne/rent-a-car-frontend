@@ -18,7 +18,7 @@ class CarInfoSection extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                car.modelo,
+                '${car.marca} - ${car.modelo}',
                 style: const TextStyle(
                   fontSize: 24,
                   fontWeight: FontWeight.bold,
