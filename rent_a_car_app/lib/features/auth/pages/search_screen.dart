@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:rent_a_car_app/core/services/car_service.dart';
 import 'package:rent_a_car_app/models/brand.dart';
-import 'package:rent_a_car_app/models/car.dart';
 import 'package:rent_a_car_app/widgets/car_card.dart';
 import '../../../core/models/car_model.dart';
 import 'filter_screen.dart';
@@ -133,7 +132,6 @@ class _SearchScreenState extends State<SearchScreen> {
           ],
         ),
       ),
-      bottomNavigationBar: _buildBottomNavigationBar(),
     );
   }
 
@@ -433,39 +431,6 @@ class _SearchScreenState extends State<SearchScreen> {
           ),
         ),
       ],
-    );
-  }
-
-  /// bottom navigation bar
-  Widget _buildBottomNavigationBar() {
-    return Container(
-      height: 80,
-      decoration: const BoxDecoration(
-        color: Colors.black,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(25)),
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-        children: [
-          _buildNavItem(Icons.home, false),
-          _buildNavItem(Icons.search, true),
-          _buildNavItem(Icons.mail_outline, false),
-          _buildNavItem(Icons.notifications_outlined, false),
-          _buildNavItem(Icons.person_outline, false),
-        ],
-      ),
-    );
-  }
-
-  /// item do navigation bar
-  Widget _buildNavItem(IconData icon, bool isSelected) {
-    return Container(
-      padding: const EdgeInsets.all(12),
-      child: Icon(
-        icon,
-        color: isSelected ? Colors.white : Colors.grey,
-        size: 24,
-      ),
     );
   }
 

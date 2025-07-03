@@ -6,6 +6,10 @@ import 'package:jwt_decoder/jwt_decoder.dart';
 import 'package:rent_a_car_app/features/auth/pages/vehicle_registration_screen.dart';
 import 'package:rent_a_car_app/features/auth/pages/owner_reservations_screen.dart';
 
+
+import '../my_reservations_screen.dart';
+import '../notifications/notification_screen.dart';
+
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
 
@@ -59,7 +63,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     _buildGeneralSection(),
                     const SizedBox(height: 24),
                     _buildSupportSection(),
-                    const SizedBox(height: 100), // Espaço para bottom nav
+                    const SizedBox(height: 40), // Espaço reduzido
                   ],
                 ),
               ),
@@ -67,7 +71,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           ],
         ),
       ),
-      bottomNavigationBar: _buildBottomNavigation(),
+
     );
   }
 
@@ -343,35 +347,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  /// Constrói bottom navigation
-  Widget _buildBottomNavigation() {
-    return Container(
-      height: 80,
-      decoration: const BoxDecoration(
-        color: Colors.black,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(25)),
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-        children: [
-          _buildNavItem(Icons.home, false),
-          _buildNavItem(Icons.search, false),
-          _buildNavItem(Icons.mail_outline, false),
-          _buildNavItem(Icons.notifications_outlined, false),
-          _buildNavItem(Icons.person, true), // Perfil ativo
-        ],
-      ),
-    );
-  }
-
-  /// Constrói item do navigation
-  Widget _buildNavItem(IconData icon, bool isActive) {
-    return Container(
-      padding: const EdgeInsets.all(12),
-      child: Icon(icon, color: isActive ? Colors.white : Colors.grey, size: 24),
-    );
-  }
-
   // ===========================
   // 🎯 MÉTODOS DE NAVEGAÇÃO
   // ===========================
@@ -395,11 +370,21 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   void _navigateToNotifications() {
-    _showComingSoon('Configurações de Notificações');
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => NotificationsScreen(),
+      ),
+    );
   }
 
   void _navigateToMyReservations() {
-    _showComingSoon('Minhas Reservas Solicitadas');
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => MyReservationsScreen(),
+      ),
+    );
   }
 
   void _navigateToVehicleRegistration() {

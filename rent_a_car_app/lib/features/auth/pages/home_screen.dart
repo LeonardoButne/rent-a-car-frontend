@@ -53,6 +53,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     super.initState();
     _initializeControllers();
     _loadData();
+    selectedBottomIndex = 0;
   }
 
   void _initializeControllers() {
@@ -343,28 +344,48 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   void _onBottomNavTap(int index) {
     if (!mounted) return;
 
-    setState(() {
-      selectedBottomIndex = index;
-    });
-
     if (!context.mounted) return;
 
     switch (index) {
       case 0:
+        setState(() {
+          selectedBottomIndex = 0;
+        });
         break;
       case 1:
+        setState(() {
+          selectedBottomIndex = 1;
+        });
         Navigator.push(
           context,
           MaterialPageRoute(builder: (context) => const NotificationsScreen()),
-        );
+        ).then((_) {
+          if (mounted) {
+            setState(() {
+              selectedBottomIndex = 0;
+            });
+          }
+        });
         break;
       case 2:
+        setState(() {
+          selectedBottomIndex = 2;
+        });
         Navigator.push(
           context,
           MaterialPageRoute(builder: (context) => const ProfileScreen()),
-        );
+        ).then((_) {
+          if (mounted) {
+            setState(() {
+              selectedBottomIndex = 0;
+            });
+          }
+        });
         break;
       case 3:
+        setState(() {
+          selectedBottomIndex = 3;
+        });
         Navigator.push(
           context,
           MaterialPageRoute(builder: (context) => const MyReservationsScreen()),
@@ -441,41 +462,41 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
             ],
           ),
           const Spacer(),
-          Stack(
-            children: [
-              Container(
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.grey.withOpacity(0.3),
-                      spreadRadius: 1,
-                      blurRadius: 5,
-                      offset: const Offset(0, 2),
-                    ),
-                  ],
-                ),
-                child: const CircleAvatar(
-                  radius: 22,
-                  backgroundColor: Colors.grey,
-                  child: Icon(Icons.person, color: Colors.white, size: 26),
-                ),
-              ),
-              Positioned(
-                right: 0,
-                top: 0,
-                child: Container(
-                  width: 14,
-                  height: 14,
-                  decoration: BoxDecoration(
-                    color: Colors.red,
-                    shape: BoxShape.circle,
-                    border: Border.all(color: Colors.white, width: 2),
-                  ),
-                ),
-              ),
-            ],
-          ),
+          // Stack(
+          //   children: [
+          //     Container(
+          //       decoration: BoxDecoration(
+          //         shape: BoxShape.circle,
+          //         boxShadow: [
+          //           BoxShadow(
+          //             color: Colors.grey.withOpacity(0.3),
+          //             spreadRadius: 1,
+          //             blurRadius: 5,
+          //             offset: const Offset(0, 2),
+          //           ),
+          //         ],
+          //       ),
+          //       child: const CircleAvatar(
+          //         radius: 22,
+          //         backgroundColor: Colors.grey,
+          //         child: Icon(Icons.person, color: Colors.white, size: 26),
+          //       ),
+          //     ),
+          //     Positioned(
+          //       right: 0,
+          //       top: 0,
+          //       child: Container(
+          //         width: 14,
+          //         height: 14,
+          //         decoration: BoxDecoration(
+          //           color: Colors.red,
+          //           shape: BoxShape.circle,
+          //           border: Border.all(color: Colors.white, width: 2),
+          //         ),
+          //       ),
+          //     ),
+          //   ],
+          // ),
         ],
       ),
     );
