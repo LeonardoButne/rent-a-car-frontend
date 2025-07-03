@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:rent_a_car_app/models/review.dart';
-import 'package:rent_a_car_app/widgets/car%20details/review_item.dart';
+import 'package:rent_a_car_app/features/cars/widgets/car%20details/review_item.dart';
 
 class ReviewsSection extends StatelessWidget {
   final List<Review> reviews;

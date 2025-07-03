@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../core/models/car_model.dart';
-import '../../features/auth/pages/home_screen.dart'; // Para ApiCar
+import '../../../../core/models/car_model.dart';
 
 class CarInfoSection extends StatelessWidget {
   final ApiCar car;

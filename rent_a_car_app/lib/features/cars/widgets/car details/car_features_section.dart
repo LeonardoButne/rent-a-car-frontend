@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
-import '../../core/models/car_model.dart';
-import '../../features/auth/pages/home_screen.dart'; // Para ApiCar
-import 'package:rent_a_car_app/widgets/car%20details/feature_item.dart';
+import '../../../../core/models/car_model.dart';
+import 'feature_item.dart';
 
 class CarFeaturesSection extends StatelessWidget {
   final ApiCar car;

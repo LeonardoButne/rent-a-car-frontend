@@ -1,14 +1,14 @@
 import 'package:flutter/material.dart';
-import 'package:rent_a_car_app/features/auth/pages/profile/edit_profile_screen.dart';
+import 'package:rent_a_car_app/features/auth/pages/edit_profile_screen.dart';
 import 'package:rent_a_car_app/models/profile_menu_item.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:jwt_decoder/jwt_decoder.dart';
-import 'package:rent_a_car_app/features/auth/pages/vehicle_registration_screen.dart';
-import 'package:rent_a_car_app/features/auth/pages/owner_reservations_screen.dart';
+import 'package:rent_a_car_app/features/cars/pages/vehicle_registration_screen.dart';
+import 'package:rent_a_car_app/features/owner/pages/owner_reservations_screen.dart';
 
 
-import '../my_reservations_screen.dart';
-import '../notifications/notification_screen.dart';
+import 'my_reservations_screen.dart';
+import '../../notifications/pages/notification_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});

@@ -1,10 +1,10 @@
 import 'package:dio/dio.dart';
-import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:rent_a_car_app/core/utils/base_url.dart';
 
 class ApiService {
   final Dio _dio = Dio(
     BaseOptions(
-      baseUrl: dotenv.env['BASE_URL'] ?? 'http://localhost:4002/api',
+      baseUrl: baseUrl,
       connectTimeout: const Duration(seconds: 5),
       receiveTimeout: const Duration(seconds: 5),
     ),

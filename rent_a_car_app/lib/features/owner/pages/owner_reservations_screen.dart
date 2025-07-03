@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:rent_a_car_app/core/services/owner_service.dart';
 import 'package:rent_a_car_app/core/models/owner.dart';
+import 'package:rent_a_car_app/core/utils/base_url.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 
 class OwnerReservationsScreen extends StatefulWidget {
   @override
@@ -57,7 +59,7 @@ class _OwnerReservationsScreenState extends State<OwnerReservationsScreen> {
                               ? ClipRRect(
                                   borderRadius: BorderRadius.circular(8),
                                   child: Image.network(
-                                    car.images.first.url,
+                                    fixImageUrl(car.images.first.url),
                                     width: 60,
                                     height: 60,
                                     fit: BoxFit.cover,
@@ -190,6 +192,14 @@ class _OwnerReservationsScreenState extends State<OwnerReservationsScreen> {
       );
     } finally {
       setState(() { _isLoadingAction = false; });
+    }
+  }
+
+  String fixImageUrl(String url) {
+    if (url.startsWith('http')) {
+      return url.replaceFirst('localhost', kIsWeb ? 'localhost' : '10.0.2.2');
+    } else {
+      return '$baseUrl/$url';
     }
   }
 } 

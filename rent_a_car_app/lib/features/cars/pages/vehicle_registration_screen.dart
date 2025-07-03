@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:rent_a_car_app/core/services/owner_service.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:io';
+import 'package:rent_a_car_app/core/utils/base_url.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 
 class VehicleRegistrationScreen extends StatefulWidget {
   const VehicleRegistrationScreen({super.key});
@@ -107,7 +109,7 @@ class _VehicleRegistrationScreenState extends State<VehicleRegistrationScreen> {
                   CircleAvatar(
                     radius: 50,
                     backgroundImage: NetworkImage(
-                      'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face',
+                      fixImageUrl('https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face'),
                     ),
                   ),
                   Positioned(
@@ -812,5 +814,13 @@ class _VehicleRegistrationScreenState extends State<VehicleRegistrationScreen> {
     _plateController.dispose();
     _localizacaoController.dispose();
     super.dispose();
+  }
+
+  String fixImageUrl(String url) {
+    if (url.startsWith('http')) {
+      return url.replaceFirst('localhost', kIsWeb ? 'localhost' : '10.0.2.2');
+    } else {
+      return '$baseUrl/$url';
+    }
   }
 }

@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:pinput/pinput.dart';
 import 'package:rent_a_car_app/core/services/api_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:rent_a_car_app/features/auth/pages/home_screen.dart';
+import 'package:rent_a_car_app/features/cars/pages/home_screen.dart';
 
 class OTPVerificationScreen extends StatefulWidget {
   final String email;

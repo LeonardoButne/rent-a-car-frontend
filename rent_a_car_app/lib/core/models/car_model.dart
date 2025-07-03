@@ -1,5 +1,8 @@
 // models/car_models.dart
 
+import 'package:rent_a_car_app/core/utils/base_url.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
+
 // Modelo de dados para o proprietário do carro
 class CarOwner {
   final String id;
@@ -218,9 +221,13 @@ class ApiCar {
   bool get hasImages => images.isNotEmpty;
 
   // Método para obter URL da imagem corrigida (para emulador Android)
-  String getFixedImageUrl(String url) {
-    return url.replaceFirst('localhost', '10.0.2.2');
+  String fixImageUrl(String url) {
+    if (url.startsWith('http')) {
+      return url.replaceFirst('localhost', kIsWeb ? 'localhost' : '10.0.2.2');
+    } else {
+      return '$baseUrl/$url';
+    }
   }
 
-  String get firstImageUrlFixed => hasImages ? getFixedImageUrl(firstImageUrl) : '';
+  String get firstImageUrlFixed => hasImages ? fixImageUrl(firstImageUrl) : '';
 }

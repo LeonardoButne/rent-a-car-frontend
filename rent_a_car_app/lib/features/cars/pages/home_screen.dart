@@ -1,15 +1,16 @@
 import 'package:flutter/material.dart';
-import 'package:rent_a_car_app/features/auth/pages/car_details_screen.dart';
-import 'package:rent_a_car_app/features/auth/pages/profile/profile_screen.dart';
+import 'package:rent_a_car_app/features/auth/pages/profile_screen.dart';
 import 'package:rent_a_car_app/features/auth/pages/search_screen.dart';
 import 'package:rent_a_car_app/features/auth/pages/my_reservations_screen.dart';
+import 'package:rent_a_car_app/features/cars/pages/car_details_screen.dart';
 import 'dart:async';
 import 'dart:developer' as developer;
 import 'dart:io';
 
 import '../../../core/models/car_model.dart';
 import '../../../core/services/car_service.dart';
-import 'notifications/notification_screen.dart';
+import '../../notifications/pages/notification_screen.dart';
+import 'package:rent_a_car_app/core/utils/base_url.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -389,7 +390,13 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
         Navigator.push(
           context,
           MaterialPageRoute(builder: (context) => const MyReservationsScreen()),
-        );
+        ).then((_) {
+          if (mounted) {
+            setState(() {
+              selectedBottomIndex = 0;
+            });
+          }
+        });
         break;
     }
   }

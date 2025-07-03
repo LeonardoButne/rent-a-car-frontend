@@ -1,16 +1,19 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:rent_a_car_app/models/review.dart';
-import 'package:rent_a_car_app/widgets/car%20details/book_button.dart';
-import 'package:rent_a_car_app/widgets/car%20details/car_details_header.dart';
-import 'package:rent_a_car_app/widgets/car%20details/car_features_section.dart';
-import 'package:rent_a_car_app/widgets/car%20details/car_image_gallery.dart';
-import 'package:rent_a_car_app/widgets/car%20details/car_info_section.dart';
-import 'package:rent_a_car_app/widgets/car%20details/dealer_section.dart';
-import 'package:rent_a_car_app/widgets/car%20details/reviews_section.dart';
+import 'package:rent_a_car_app/features/cars/widgets/car%20details/book_button.dart';
+import 'package:rent_a_car_app/features/cars/widgets/car%20details/car_details_header.dart';
+import 'package:rent_a_car_app/features/cars/widgets/car%20details/car_features_section.dart';
+import 'package:rent_a_car_app/features/cars/widgets/car%20details/car_image_gallery.dart';
+import 'package:rent_a_car_app/features/cars/widgets/car%20details/car_info_section.dart';
+import 'package:rent_a_car_app/features/cars/widgets/car%20details/dealer_section.dart';
+import 'package:rent_a_car_app/features/cars/widgets/car%20details/reviews_section.dart';
 import 'package:rent_a_car_app/core/services/reservation_service.dart';
 import 'package:intl/intl.dart';
 
 import '../../../core/models/car_model.dart';
+import 'package:rent_a_car_app/core/utils/base_url.dart';
+
 
 class CarDetailsScreen extends StatefulWidget {
   final ApiCar car;
@@ -204,9 +207,15 @@ class _CarDetailsScreenState extends State<CarDetailsScreen> {
     );
   }
 
-  String fixImageUrl(String url) {
-    return url.replaceFirst('localhost', '10.0.2.2');
+String fixImageUrl(String url) {
+  if (url.startsWith('http')) {
+    // Se já for uma URL absoluta, só faz o replace se for localhost
+    return url.replaceFirst('localhost', kIsWeb ? 'localhost' : '10.0.2.2');
+  } else {
+    // Se for um path relativo, monta com baseUrl
+    return '$baseUrl/$url';
   }
+}
 }
 
 class _ReservationDialogResult {

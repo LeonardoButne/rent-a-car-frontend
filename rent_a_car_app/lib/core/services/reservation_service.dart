@@ -19,7 +19,7 @@ class ReservationService {
   }) async {
     final token = await _getToken();
     final response = await _api.post(
-      'client/reservations',
+      '/client/reservations',
       {
         'carId': carId,
         'ownerId': ownerId,
@@ -35,7 +35,7 @@ class ReservationService {
   static Future<List<Reservation>> getMyReservations() async {
     final token = await _getToken();
     final response = await _api.get(
-      'client/reservations/my',
+      '/client/reservations/my',
       headers: {'Authorization': 'Bearer $token'},
     );
     final List<dynamic> data = response.data;
@@ -45,7 +45,7 @@ class ReservationService {
   static Future<Reservation> getReservationById(String reservationId) async {
     final token = await _getToken();
     final response = await _api.get(
-      'client/reservations/$reservationId',
+      '/client/reservations/$reservationId',
       headers: {'Authorization': 'Bearer $token'},
     );
     return Reservation.fromJson(response.data);
@@ -54,7 +54,7 @@ class ReservationService {
   static Future<void> cancelReservation(String reservationId) async {
     final token = await _getToken();
     await _api.delete(
-      'client/reservations/$reservationId',
+      '/client/reservations/$reservationId',
       headers: {'Authorization': 'Bearer $token'},
     );
   }
@@ -67,7 +67,7 @@ class ReservationService {
   }) async {
     final token = await _getToken();
     final response = await _api.patch(
-      'client/reservations/$reservationId',
+      '/client/reservations/$reservationId',
       {
         'startDate': startDate.toIso8601String(),
         'endDate': endDate.toIso8601String(),

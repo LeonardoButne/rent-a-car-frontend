@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:rent_a_car_app/core/models/reservation.dart';
 import 'package:rent_a_car_app/core/services/reservation_service.dart';
 import 'package:intl/intl.dart';
+import 'package:rent_a_car_app/core/utils/base_url.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 
 class MyReservationsScreen extends StatefulWidget {
   const MyReservationsScreen({super.key});
@@ -148,7 +150,13 @@ class _MyReservationsScreenState extends State<MyReservationsScreen> {
   }
 
   String fixImageUrl(String url) {
-    return url.replaceFirst('localhost', '10.0.2.2');
+    if (url.startsWith('http')) {
+      // Se já for uma URL absoluta, só faz o replace se for localhost
+      return url.replaceFirst('localhost', kIsWeb ? 'localhost' : '10.0.2.2');
+    } else {
+      // Se for um path relativo, monta com baseUrl
+      return '$baseUrl/$url';
+    }
   }
 }
 

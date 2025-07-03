@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:rent_a_car_app/core/utils/base_url.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 
 class CarImageGallery extends StatefulWidget {
   final List<String> images;
@@ -44,7 +46,7 @@ class _CarImageGalleryState extends State<CarImageGallery> {
                 child: ClipRRect(
                   borderRadius: BorderRadius.circular(16),
                   child: Image.network(
-                    imageUrl,
+                    fixImageUrl(imageUrl),
                     fit: BoxFit.cover,
                     errorBuilder: (context, error, stackTrace) => Center(
                       child: Icon(Icons.directions_car, size: 80, color: Colors.grey[400]),
@@ -78,5 +80,13 @@ class _CarImageGalleryState extends State<CarImageGallery> {
         ],
       ),
     );
+  }
+}
+
+String fixImageUrl(String url) {
+  if (url.startsWith('http')) {
+    return url.replaceFirst('localhost', kIsWeb ? 'localhost' : '10.0.2.2');
+  } else {
+    return '$baseUrl/$url';
   }
 }
