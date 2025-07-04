@@ -1,6 +1,8 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:rent_a_car_app/features/auth/pages/dealer/dealer_details_screen.dart';
+import 'package:rent_a_car_app/features/cars/widgets/car%20details/location_section.dart';
+import 'package:rent_a_car_app/features/cars/widgets/car%20details/services_section.dart';
 import 'package:rent_a_car_app/models/dealer.dart';
 import 'package:rent_a_car_app/models/review.dart';
 import 'package:rent_a_car_app/features/cars/widgets/car%20details/book_button.dart';
@@ -147,6 +149,11 @@ class _CarDetailsScreenState extends State<CarDetailsScreen> {
                     CarInfoSection(car: widget.car),
                     if (widget.car.owner != null)
                       DealerSection(onContact: () {}, owner: widget.car.owner!),
+
+                    // adição de location e services
+                    LocationSection(car: widget.car),
+                    ServicesSection(car: widget.car),
+
                     CarFeaturesSection(car: widget.car),
                     ReviewsSection(reviews: reviews),
                     const SizedBox(height: 100),
