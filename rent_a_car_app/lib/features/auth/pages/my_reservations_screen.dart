@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+/*import 'package:flutter/material.dart';
 import 'package:rent_a_car_app/core/models/reservation.dart';
 import 'package:rent_a_car_app/core/services/reservation_service.dart';
 import 'package:intl/intl.dart';
@@ -32,8 +32,8 @@ class _MyReservationsScreenState extends State<MyReservationsScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Minhas Reservas'),
-        backgroundColor: Colors.black,
-        foregroundColor: Colors.white,
+        backgroundColor: Colors.white,
+        foregroundColor: Colors.black,
       ),
       body: RefreshIndicator(
         onRefresh: _refresh,
@@ -74,7 +74,9 @@ class _MyReservationsScreenState extends State<MyReservationsScreen> {
                 }
                 final car = r.car;
                 final owner = r.owner;
-                final imageUrl = car != null && car.images.isNotEmpty ? fixImageUrl(car.images.first.url) : null;
+                final imageUrl = car != null && car.images.isNotEmpty
+                    ? fixImageUrl(car.images.first.url)
+                    : null;
                 return ListTile(
                   leading: imageUrl != null
                       ? ClipRRect(
@@ -84,12 +86,16 @@ class _MyReservationsScreenState extends State<MyReservationsScreen> {
                             width: 56,
                             height: 56,
                             fit: BoxFit.cover,
-                            errorBuilder: (context, error, stackTrace) => Container(
-                              width: 56,
-                              height: 56,
-                              color: Colors.grey[200],
-                              child: const Icon(Icons.directions_car, color: Colors.grey),
-                            ),
+                            errorBuilder: (context, error, stackTrace) =>
+                                Container(
+                                  width: 56,
+                                  height: 56,
+                                  color: Colors.grey[200],
+                                  child: const Icon(
+                                    Icons.directions_car,
+                                    color: Colors.grey,
+                                  ),
+                                ),
                           ),
                         )
                       : Container(
@@ -99,27 +105,42 @@ class _MyReservationsScreenState extends State<MyReservationsScreen> {
                             color: Colors.grey[200],
                             borderRadius: BorderRadius.circular(8),
                           ),
-                          child: const Icon(Icons.directions_car, color: Colors.grey),
+                          child: const Icon(
+                            Icons.directions_car,
+                            color: Colors.grey,
+                          ),
                         ),
                   title: car != null
-                      ? Text('${car.marca} ${car.modelo} (${car.cor})', style: const TextStyle(fontWeight: FontWeight.bold))
-                      : Text('Carro ${r.carId}', style: const TextStyle(fontWeight: FontWeight.bold)),
+                      ? Text(
+                          '${car.marca} ${car.modelo} (${car.cor})',
+                          style: const TextStyle(fontWeight: FontWeight.bold),
+                        )
+                      : Text(
+                          'Carro ${r.carId}',
+                          style: const TextStyle(fontWeight: FontWeight.bold),
+                        ),
                   subtitle: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text('Reserva #${r.id.substring(0, 8)}'),
                       if (car != null) Text('Placa: ${car.placa}'),
-                      Text('De: ${DateFormat('dd/MM/yyyy').format(r.startDate)} até ${DateFormat('dd/MM/yyyy').format(r.endDate)}'),
-                      if (owner != null) Text('Proprietario: ${owner.name} ${owner.lastName}'),
+                      Text(
+                        'De: ${DateFormat('dd/MM/yyyy').format(r.startDate)} até ${DateFormat('dd/MM/yyyy').format(r.endDate)}',
+                      ),
+                      if (owner != null)
+                        Text('Proprietario: ${owner.name} ${owner.lastName}'),
                     ],
                   ),
                   trailing: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Text(r.status, style: TextStyle(
-                        color: statusColor,
-                        fontWeight: FontWeight.bold,
-                      )),
+                      Text(
+                        r.status,
+                        style: TextStyle(
+                          color: statusColor,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
                       Text('MT ${r.price.toStringAsFixed(0)}'),
                     ],
                   ),
@@ -127,7 +148,8 @@ class _MyReservationsScreenState extends State<MyReservationsScreen> {
                     final result = await Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (context) => ReservationDetailsScreen(reservationId: r.id),
+                        builder: (context) =>
+                            ReservationDetailsScreen(reservationId: r.id),
                       ),
                     );
                     if (result == true) {
@@ -165,7 +187,8 @@ class ReservationDetailsScreen extends StatefulWidget {
   const ReservationDetailsScreen({super.key, required this.reservationId});
 
   @override
-  State<ReservationDetailsScreen> createState() => _ReservationDetailsScreenState();
+  State<ReservationDetailsScreen> createState() =>
+      _ReservationDetailsScreenState();
 }
 
 class _ReservationDetailsScreenState extends State<ReservationDetailsScreen> {
@@ -175,20 +198,29 @@ class _ReservationDetailsScreenState extends State<ReservationDetailsScreen> {
   @override
   void initState() {
     super.initState();
-    _futureReservation = ReservationService.getReservationById(widget.reservationId);
+    _futureReservation = ReservationService.getReservationById(
+      widget.reservationId,
+    );
   }
 
   Future<void> _cancelReservation() async {
-    setState(() { _isCancelling = true; });
+    setState(() {
+      _isCancelling = true;
+    });
     try {
       await ReservationService.cancelReservation(widget.reservationId);
       if (mounted) {
         Navigator.of(context).pop(true); // Retorna true para atualizar lista
       }
     } catch (e) {
-      setState(() { _isCancelling = false; });
+      setState(() {
+        _isCancelling = false;
+      });
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Erro ao cancelar: $e'), backgroundColor: Colors.red),
+        SnackBar(
+          content: Text('Erro ao cancelar: $e'),
+          backgroundColor: Colors.red,
+        ),
       );
     }
   }
@@ -216,7 +248,13 @@ class _ReservationDetailsScreenState extends State<ReservationDetailsScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('Reserva #${r.id}', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                Text(
+                  'Reserva #${r.id}',
+                  style: const TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
                 const SizedBox(height: 16),
                 Text('Carro: ${r.car?.marca}'),
                 Text('Proprietario: ${r.owner?.name} ${r.owner?.lastName}'),
@@ -242,7 +280,10 @@ class _ReservationDetailsScreenState extends State<ReservationDetailsScreen> {
                           ? const SizedBox(
                               width: 20,
                               height: 20,
-                              child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+                              child: CircularProgressIndicator(
+                                color: Colors.white,
+                                strokeWidth: 2,
+                              ),
                             )
                           : const Text('Cancelar Reserva'),
                     ),
@@ -254,4 +295,105 @@ class _ReservationDetailsScreenState extends State<ReservationDetailsScreen> {
       ),
     );
   }
-} 
+}
+*/
+
+import 'package:flutter/material.dart';
+import 'package:rent_a_car_app/core/models/reservation.dart';
+import 'package:rent_a_car_app/core/services/reservation_service.dart';
+import 'package:rent_a_car_app/features/auth/pages/reservations/reservation_details_screen.dart';
+import 'package:rent_a_car_app/features/cars/widgets/empty_reservation_state.dart';
+import 'package:rent_a_car_app/features/cars/widgets/error_reservations_state.dart';
+import 'package:rent_a_car_app/features/cars/widgets/reservation_list_item.dart';
+import 'package:rent_a_car_app/features/cars/widgets/reservations_header.dart';
+
+class MyReservationsScreen extends StatefulWidget {
+  const MyReservationsScreen({super.key});
+
+  @override
+  State<MyReservationsScreen> createState() => _MyReservationsScreenState();
+}
+
+class _MyReservationsScreenState extends State<MyReservationsScreen> {
+  late Future<List<Reservation>> _futureReservations;
+
+  @override
+  void initState() {
+    super.initState();
+    _futureReservations = ReservationService.getMyReservations();
+  }
+
+  Future<void> _refresh() async {
+    setState(() {
+      _futureReservations = ReservationService.getMyReservations();
+    });
+  }
+
+  void _navigateToDetails(String reservationId) async {
+    final result = await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) =>
+            ReservationDetailsScreen(reservationId: reservationId),
+      ),
+    );
+    if (result == true) {
+      _refresh();
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.grey[50],
+      body: SafeArea(
+        child: Column(
+          children: [
+            ReservationsHeader(onBack: () => Navigator.pop(context)),
+            Expanded(
+              child: RefreshIndicator(
+                onRefresh: _refresh,
+                child: FutureBuilder<List<Reservation>>(
+                  future: _futureReservations,
+                  builder: (context, snapshot) {
+                    if (snapshot.connectionState == ConnectionState.waiting) {
+                      return const Center(
+                        child: CircularProgressIndicator(color: Colors.orange),
+                      );
+                    }
+
+                    if (snapshot.hasError) {
+                      return ErrorReservationsState(
+                        error: snapshot.error.toString(),
+                        onRetry: _refresh,
+                      );
+                    }
+
+                    final reservations = snapshot.data ?? [];
+
+                    if (reservations.isEmpty) {
+                      return const EmptyReservationsState();
+                    }
+
+                    return ListView.separated(
+                      padding: const EdgeInsets.all(20),
+                      itemCount: reservations.length,
+                      separatorBuilder: (_, __) => const SizedBox(height: 16),
+                      itemBuilder: (context, index) {
+                        return ReservationListItem(
+                          reservation: reservations[index],
+                          onTap: () =>
+                              _navigateToDetails(reservations[index].id),
+                        );
+                      },
+                    );
+                  },
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
