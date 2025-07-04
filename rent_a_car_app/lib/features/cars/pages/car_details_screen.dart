@@ -1,5 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:rent_a_car_app/features/auth/pages/dealer/dealer_details_screen.dart';
+import 'package:rent_a_car_app/models/dealer.dart';
 import 'package:rent_a_car_app/models/review.dart';
 import 'package:rent_a_car_app/features/cars/widgets/car%20details/book_button.dart';
 import 'package:rent_a_car_app/features/cars/widgets/car%20details/car_details_header.dart';
@@ -13,7 +15,6 @@ import 'package:intl/intl.dart';
 
 import '../../../core/models/car_model.dart';
 import 'package:rent_a_car_app/core/utils/base_url.dart';
-
 
 class CarDetailsScreen extends StatefulWidget {
   final ApiCar car;
@@ -31,7 +32,8 @@ class _CarDetailsScreenState extends State<CarDetailsScreen> {
     Review(
       userName: 'Mauro',
       rating: 5.0,
-      comment: 'O aluguel do carro foi limpo, confiável, e o serviço foi rápido e eficiente.',
+      comment:
+          'O aluguel do carro foi limpo, confiável, e o serviço foi rápido e eficiente.',
       timeAgo: 'Hoje',
       avatar: 'assets/avatars/jack.png',
     ),
@@ -79,7 +81,10 @@ class _CarDetailsScreenState extends State<CarDetailsScreen> {
         _showBookingSuccess(reservation);
       } catch (e) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Erro ao reservar: $e'), backgroundColor: Colors.red),
+          SnackBar(
+            content: Text('Erro ao reservar: $e'),
+            backgroundColor: Colors.red,
+          ),
         );
       }
     }
@@ -95,77 +100,29 @@ class _CarDetailsScreenState extends State<CarDetailsScreen> {
     );
   }
 
-  void _contactDealer() {
+  void _navigateToDealerDetails() {
     final owner = widget.car.owner;
 
-    showModalBottomSheet(
-      context: context,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (context) => Container(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              'Entrar em Contato com ${owner?.name ?? "Proprietário"}',
-              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-            ),
-            if (owner != null) ...[
-              const SizedBox(height: 10),
-              Text(
-                '${owner.name} ${owner.lastName}',
-                style: const TextStyle(fontSize: 16, color: Colors.grey),
-              ),
-              Text(
-                owner.address ?? '',
-                style: const TextStyle(fontSize: 14, color: Colors.grey),
-              ),
-            ],
-            const SizedBox(height: 20),
-            if (owner?.telephone != null)
-              ListTile(
-                leading: const Icon(Icons.phone, color: Colors.green),
-                title: const Text('Ligar'),
-                subtitle: Text(owner!.telephone),
-                onTap: () {
-                  Navigator.pop(context);
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text('Ligando para ${owner.telephone}...'),
-                    ),
-                  );
-                },
-              ),
-            if (owner?.telephone != null)
-              ListTile(
-                leading: const Icon(Icons.message, color: Colors.blue),
-                title: const Text('WhatsApp'),
-                subtitle: Text('Enviar mensagem para ${owner!.telephone}'),
-                onTap: () {
-                  Navigator.pop(context);
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Abrindo WhatsApp...')),
-                  );
-                },
-              ),
-            if (owner?.email != null)
-              ListTile(
-                leading: const Icon(Icons.email, color: Colors.orange),
-                title: const Text('Email'),
-                subtitle: Text(owner!.email),
-                onTap: () {
-                  Navigator.pop(context);
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text('Enviando email para ${owner.email}...')),
-                  );
-                },
-              ),
-          ],
+    if (owner != null) {
+      final dealer = Dealer(
+        id: owner.id?.toString() ?? '1',
+        name: '${owner.name} ${owner.lastName ?? ''}',
+        location: owner.address ?? 'Maputo, Moçambique',
+        phone: owner.telephone ?? '+258 84 123 4567',
+        profileImage: null, // ou owner.profileImage se existir
+      );
+
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => DealerDetailsScreen(dealer: dealer),
         ),
-      ),
-    );
+      );
+    }
+  }
+
+  void _contactDealer() {
+    _navigateToDealerDetails();
   }
 
   @override
@@ -207,22 +164,26 @@ class _CarDetailsScreenState extends State<CarDetailsScreen> {
     );
   }
 
-String fixImageUrl(String url) {
-  if (url.startsWith('http')) {
-    // Se já for uma URL absoluta, só faz o replace se for localhost
-    return url.replaceFirst('localhost', kIsWeb ? 'localhost' : '10.0.2.2');
-  } else {
-    // Se for um path relativo, monta com baseUrl
-    return '$baseUrl/$url';
+  String fixImageUrl(String url) {
+    if (url.startsWith('http')) {
+      // Se já for uma URL absoluta, só faz o replace se for localhost
+      return url.replaceFirst('localhost', kIsWeb ? 'localhost' : '10.0.2.2');
+    } else {
+      // Se for um path relativo, monta com baseUrl
+      return '$baseUrl/$url';
+    }
   }
-}
 }
 
 class _ReservationDialogResult {
   final DateTime startDate;
   final DateTime endDate;
   final String? notes;
-  _ReservationDialogResult({required this.startDate, required this.endDate, this.notes});
+  _ReservationDialogResult({
+    required this.startDate,
+    required this.endDate,
+    this.notes,
+  });
 }
 
 class _ReservationDialog extends StatefulWidget {
@@ -246,7 +207,9 @@ class _ReservationDialogState extends State<_ReservationDialog> {
 
   Future<void> _pickDate({required bool isStart}) async {
     final now = DateTime.now();
-    final initialDate = isStart ? (_startDate ?? now) : (_endDate ?? now.add(const Duration(days: 1)));
+    final initialDate = isStart
+        ? (_startDate ?? now)
+        : (_endDate ?? now.add(const Duration(days: 1)));
     final firstDate = isStart ? now : (_startDate ?? now);
     final picked = await showDatePicker(
       context: context,
@@ -284,11 +247,16 @@ class _ReservationDialogState extends State<_ReservationDialog> {
                     onTap: () => _pickDate(isStart: true),
                     child: AbsorbPointer(
                       child: TextFormField(
-                        decoration: const InputDecoration(labelText: 'Data Início'),
-                        controller: TextEditingController(
-                          text: _startDate != null ? DateFormat('dd/MM/yyyy').format(_startDate!) : '',
+                        decoration: const InputDecoration(
+                          labelText: 'Data Início',
                         ),
-                        validator: (_) => _startDate == null ? 'Selecione a data' : null,
+                        controller: TextEditingController(
+                          text: _startDate != null
+                              ? DateFormat('dd/MM/yyyy').format(_startDate!)
+                              : '',
+                        ),
+                        validator: (_) =>
+                            _startDate == null ? 'Selecione a data' : null,
                       ),
                     ),
                   ),
@@ -299,11 +267,16 @@ class _ReservationDialogState extends State<_ReservationDialog> {
                     onTap: () => _pickDate(isStart: false),
                     child: AbsorbPointer(
                       child: TextFormField(
-                        decoration: const InputDecoration(labelText: 'Data Fim'),
-                        controller: TextEditingController(
-                          text: _endDate != null ? DateFormat('dd/MM/yyyy').format(_endDate!) : '',
+                        decoration: const InputDecoration(
+                          labelText: 'Data Fim',
                         ),
-                        validator: (_) => _endDate == null ? 'Selecione a data' : null,
+                        controller: TextEditingController(
+                          text: _endDate != null
+                              ? DateFormat('dd/MM/yyyy').format(_endDate!)
+                              : '',
+                        ),
+                        validator: (_) =>
+                            _endDate == null ? 'Selecione a data' : null,
                       ),
                     ),
                   ),
@@ -313,7 +286,9 @@ class _ReservationDialogState extends State<_ReservationDialog> {
             const SizedBox(height: 12),
             TextFormField(
               controller: _notesController,
-              decoration: const InputDecoration(labelText: 'Observação (opcional)'),
+              decoration: const InputDecoration(
+                labelText: 'Observação (opcional)',
+              ),
               maxLines: 2,
             ),
           ],
@@ -332,7 +307,9 @@ class _ReservationDialogState extends State<_ReservationDialog> {
                 _ReservationDialogResult(
                   startDate: _startDate!,
                   endDate: _endDate!,
-                  notes: _notesController.text.isNotEmpty ? _notesController.text : null,
+                  notes: _notesController.text.isNotEmpty
+                      ? _notesController.text
+                      : null,
                 ),
               );
             }
