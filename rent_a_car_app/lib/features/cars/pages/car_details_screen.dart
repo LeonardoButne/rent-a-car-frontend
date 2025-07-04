@@ -121,9 +121,9 @@ class _CarDetailsScreenState extends State<CarDetailsScreen> {
     }
   }
 
-  void _contactDealer() {
+  /*void _contactDealer() {
     _navigateToDealerDetails();
-  }
+  }*/
 
   @override
   Widget build(BuildContext context) {
@@ -146,10 +146,7 @@ class _CarDetailsScreenState extends State<CarDetailsScreen> {
                     CarImageGallery(images: images),
                     CarInfoSection(car: widget.car),
                     if (widget.car.owner != null)
-                      DealerSection(
-                        onContact: _contactDealer,
-                        owner: widget.car.owner!,
-                      ),
+                      DealerSection(onContact: () {}, owner: widget.car.owner!),
                     CarFeaturesSection(car: widget.car),
                     ReviewsSection(reviews: reviews),
                     const SizedBox(height: 100),
