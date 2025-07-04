@@ -6,14 +6,14 @@ import 'package:rent_a_car_app/features/cars/pages/home_screen.dart';
 
 class OTPVerificationScreen extends StatefulWidget {
   final String email;
+  final String deviceId;
   final bool isLoginOtp;
-  final String typeAccount; // 'client' ou 'owner'
 
   const OTPVerificationScreen({
-    Key? key, 
+    Key? key,
     required this.email,
+    required this.deviceId,
     this.isLoginOtp = false,
-    required this.typeAccount,
   }) : super(key: key);
 
   @override
@@ -54,33 +54,18 @@ class _OTPVerificationScreenState extends State<OTPVerificationScreen> {
     });
     try {
       final api = ApiService();
-      
-      // Escolher endpoint baseado no tipo de OTP e typeAccount
-      String endpoint;
-      if (widget.isLoginOtp) {
-        endpoint = widget.typeAccount == 'owner'
-            ? '/owner/login/verify-otp'
-            : '/client/login/verify-otp';
-      } else {
-        endpoint = widget.typeAccount == 'owner'
-            ? '/owner/signup/confirm'
-            : '/client/signup/confirm';
-      }
-      final payload = {'email': widget.email, 'otp': pin};
-      
-      final response = await api.post(endpoint, payload);
+      final response = await api.post('/auth/verify-otp', {
+        'email': widget.email,
+        'otp': pin,
+        'deviceId': widget.deviceId,
+      });
       print('Resposta OTP: ${response.data}');
       print('Status: ${response.statusCode}');
-      
-      // Verificar se a resposta tem token
       final responseData = response.data;
       final token = responseData['token'];
-      
       if (response.statusCode == 200 && token != null) {
-        // Salvar token localmente
         final prefs = await SharedPreferences.getInstance();
         await prefs.setString('auth_token', token);
-        // Navegar para nova HomeScreen
         if (mounted) {
           Navigator.of(context).pushAndRemoveUntil(
             MaterialPageRoute(builder: (context) => const HomeScreen()),
@@ -113,10 +98,7 @@ class _OTPVerificationScreenState extends State<OTPVerificationScreen> {
     });
     try {
       final api = ApiService();
-      String endpoint = widget.typeAccount == 'owner'
-          ? '/owner/resend-otp-owner'
-          : '/client/resend-otp-client';
-      final response = await api.post(endpoint, {
+      final response = await api.post('/auth/resend-otp', {
         'email': widget.email,
       });
       if (response.statusCode == 200) {

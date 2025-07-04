@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:rent_a_car_app/features/auth/pages/otp_verification_screen.dart';
 import 'package:rent_a_car_app/core/services/api_service.dart';
+import 'package:rent_a_car_app/core/utils/device_id.dart';
+import 'package:rent_a_car_app/features/auth/pages/login.dart';
 
 class Register extends StatefulWidget {
   const Register({super.key});
@@ -38,6 +40,7 @@ class _RegisterState extends State<Register> {
     });
     try {
       final api = ApiService();
+      final deviceId = await getDeviceId();
       final typeAccount = _accountTypeMap[_accountType]!;
       final endpoint = typeAccount == 'owner' ? '/owner/signup' : '/client/signup';
       final payload = typeAccount == 'owner'
@@ -51,6 +54,7 @@ class _RegisterState extends State<Register> {
               'address': _enderecoController.text.trim(),
               'package': _pacoteController.text.trim(),
               'typeAccount': typeAccount,
+              'deviceId': deviceId,
             }
           : {
               'name': _nomeController.text.trim(),
@@ -60,6 +64,7 @@ class _RegisterState extends State<Register> {
               'passwordConfirm': _confirmPasswordController.text.trim(),
               'telephone': _telefoneController.text.trim(),
               'typeAccount': typeAccount,
+              'deviceId': deviceId,
             };
       final response = await api.post(endpoint, payload);
       if (response.statusCode == 200 || response.statusCode == 201) {
@@ -68,7 +73,8 @@ class _RegisterState extends State<Register> {
           MaterialPageRoute(
             builder: (context) => OTPVerificationScreen(
               email: _emailController.text.trim(),
-              typeAccount: typeAccount,
+              deviceId: deviceId,
+              isLoginOtp: false,
             ),
           ),
         );
@@ -135,25 +141,34 @@ class _RegisterState extends State<Register> {
 
               SizedBox(height: 40),
 
-              // Dropdown Tipo de Conta
-              DropdownButtonFormField<String>(
-                value: _accountType,
-                items: _accountTypes.map((type) => DropdownMenuItem(
-                  value: type,
-                  child: Text(type),
-                )).toList(),
-                onChanged: (value) {
-                  setState(() {
-                    _accountType = value!;
-                  });
-                },
-                decoration: InputDecoration(
-                  labelText: 'Tipo de Conta',
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                  contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              // Dropdown de tipo de conta
+              Container(
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: Colors.grey[300]!),
+                ),
+                padding: EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                child: DropdownButtonHideUnderline(
+                  child: DropdownButton<String>(
+                    value: _accountType,
+                    isExpanded: true,
+                    items: _accountTypes.map((type) {
+                      return DropdownMenuItem(
+                        value: type,
+                        child: Text(type),
+                      );
+                    }).toList(),
+                    onChanged: (value) {
+                      setState(() {
+                        _accountType = value!;
+                      });
+                    },
+                  ),
                 ),
               ),
-              SizedBox(height: 24),
+
+              SizedBox(height: 16),
 
               // Campo Nome
               Row(
@@ -402,7 +417,10 @@ class _RegisterState extends State<Register> {
                 height: 56,
                 child: OutlinedButton(
                   onPressed: () {
-                    // Navegar para tela de login
+                    Navigator.pushReplacement(
+                      context,
+                      MaterialPageRoute(builder: (context) => Login()),
+                    );
                   },
                   style: OutlinedButton.styleFrom(
                     side: BorderSide(color: Colors.grey[300]!),

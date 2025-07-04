@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:rent_a_car_app/core/services/Owner_Image_upload_service.dart';
 import 'package:rent_a_car_app/core/services/owner_service.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:io';
@@ -14,8 +15,7 @@ class VehicleRegistrationScreen extends StatefulWidget {
 }
 
 class _VehicleRegistrationScreenState extends State<VehicleRegistrationScreen> {
-  final TextEditingController _vehicleIdController = TextEditingController();
-  final TextEditingController _ownerIdController = TextEditingController();
+  final _formKey = GlobalKey<FormState>();
   final TextEditingController _modelController = TextEditingController();
   final TextEditingController _yearController = TextEditingController();
   final TextEditingController _dailyPriceController = TextEditingController();
@@ -37,39 +37,17 @@ class _VehicleRegistrationScreenState extends State<VehicleRegistrationScreen> {
   bool termsAccepted = false;
   bool _isLoading = false;
   String _serviceType = '';
+
   final List<String> _serviceTypes = ['Logística', 'Aluguer'];
-
   final List<String> carBrands = [
-    'Mazda',
-    'BMW',
-    'Mercedes',
-    'Audi',
-    'Honda',
-    'Toyota',
-    'Nissan',
-    'Jeep',
-    'VW',
-    'Tesla',
-    'Lamborghini',
+    'Mazda', 'BMW', 'Mercedes', 'Audi', 'Honda', 'Toyota', 
+    'Nissan', 'Jeep', 'VW', 'Tesla', 'Lamborghini',
   ];
-
   final List<String> carClasses = [
-    'Económico',
-    'Compacto',
-    'Médio',
-    'Executivo',
-    'Luxo',
-    'SUV',
-    'Desportivo',
+    'Económico', 'Compacto', 'Médio', 'Executivo', 'Luxo', 'SUV', 'Desportivo',
   ];
-
   final List<String> colors = [
-    'Branco',
-    'Cinzento',
-    'Azul',
-    'Preto',
-    'Vermelho',
-    'Prata',
+    'Branco', 'Cinzento', 'Azul', 'Preto', 'Vermelho', 'Prata',
   ];
   final List<String> fuelTypes = ['Eléctrico', 'Gasolina', 'Diesel', 'Híbrido'];
   final List<String> transmissions = ['Manual', 'Automática', 'CVT'];
@@ -80,580 +58,687 @@ class _VehicleRegistrationScreenState extends State<VehicleRegistrationScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.grey[50],
+      backgroundColor: Colors.grey[100],
       appBar: AppBar(
-        backgroundColor: Colors.transparent,
+        backgroundColor: Colors.white,
         elevation: 0,
         leading: IconButton(
           icon: Icon(Icons.arrow_back, color: Colors.black),
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
-          'Koila',
+          'Adicionar Veículo',
           style: TextStyle(
             color: Colors.black,
-            fontSize: 18,
+            fontSize: 20,
             fontWeight: FontWeight.w600,
           ),
         ),
+        centerTitle: true,
       ),
-      body: SingleChildScrollView(
-        padding: EdgeInsets.all(24),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Avatar do proprietário
-            Center(
-              child: Stack(
+      body: Form(
+        key: _formKey,
+        child: SingleChildScrollView(
+          padding: EdgeInsets.all(20),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Seção de Imagens
+              _buildImageSection(),
+              SizedBox(height: 24),
+              
+              // Informações Básicas
+              _buildSectionCard(
+                title: 'Informações Básicas',
                 children: [
-                  CircleAvatar(
-                    radius: 50,
-                    backgroundImage: NetworkImage(
-                      fixImageUrl('https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face'),
-                    ),
-                  ),
-                  Positioned(
-                    bottom: 0,
-                    right: 0,
-                    child: Container(
-                      padding: EdgeInsets.all(4),
-                      decoration: BoxDecoration(
-                        color: Colors.grey[300],
-                        shape: BoxShape.circle,
-                      ),
-                      child: Icon(
-                        Icons.camera_alt,
-                        size: 16,
-                        color: Colors.grey[600],
-                      ),
-                    ),
-                  ),
+                  _buildBrandModelRow(),
+                  SizedBox(height: 16),
+                  _buildYearClassRow(),
+                  SizedBox(height: 16),
+                  _buildPlateLocationRow(),
                 ],
               ),
-            ),
-
-            SizedBox(height: 32),
-
-            // Informações da Viatura
-            Text(
-              'Informações da Viatura',
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-                color: Colors.black,
-              ),
-            ),
-
-            SizedBox(height: 20),
-
-            // Marca e Modelo
-            Row(
-              children: [
-                Expanded(
-                  child: Container(
-                    padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                    decoration: BoxDecoration(
-                      color: Color(0xFF2F3E3A),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: DropdownButtonHideUnderline(
-                      child: DropdownButton<String>(
-                        value: selectedBrand,
-                        dropdownColor: Color(0xFF2F3E3A),
-                        style: TextStyle(color: Colors.white, fontSize: 16),
-                        items: carBrands.map((brand) {
-                          return DropdownMenuItem(
-                            value: brand,
-                            child: Text(
-                              brand,
-                              style: TextStyle(color: Colors.white),
-                            ),
-                          );
-                        }).toList(),
-                        onChanged: (value) {
-                          setState(() {
-                            selectedBrand = value!;
-                          });
-                        },
-                      ),
-                    ),
-                  ),
-                ),
-                SizedBox(width: 16),
-                Expanded(
-                  child: _buildTextField(
-                    controller: _modelController,
-                    hint: 'Modelo da Viatura',
-                  ),
-                ),
-              ],
-            ),
-
-            SizedBox(height: 16),
-
-            // Ano e Classe
-            Row(
-              children: [
-                Expanded(
-                  child: _buildTextField(
-                    controller: _yearController,
-                    hint: 'Ano',
-                    keyboardType: TextInputType.number,
-                  ),
-                ),
-                SizedBox(width: 16),
-                Expanded(
-                  child: _buildDropdown(
-                    value: selectedClass,
-                    items: carClasses,
-                    hint: 'Classe',
-                    onChanged: (value) {
-                      setState(() {
-                        selectedClass = value!;
-                      });
-                    },
-                  ),
-                ),
-              ],
-            ),
-
-            SizedBox(height: 20),
-
-            // Preços
-            Text(
-              'Preços de Aluguer',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-                color: Colors.black,
-              ),
-            ),
-
-            SizedBox(height: 16),
-
-            Row(
-              children: [
-                Expanded(
-                  child: _buildTextField(
-                    controller: _dailyPriceController,
-                    hint: 'Diario',
-                    keyboardType: TextInputType.number,
-                  ),
-                ),
-                SizedBox(width: 12),
-                Expanded(
-                  child: _buildTextField(
-                    controller: _weeklyPriceController,
-                    hint: 'Semanal',
-                    keyboardType: TextInputType.number,
-                  ),
-                ),
-                SizedBox(width: 12),
-                Expanded(
-                  child: _buildTextField(
-                    controller: _monthlyPriceController,
-                    hint: 'Mensal',
-                    keyboardType: TextInputType.number,
-                  ),
-                ),
-              ],
-            ),
-
-            SizedBox(height: 20),
-
-            // Upload de imagens
-            Container(
-              padding: EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: Colors.grey[300]!),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+              
+              SizedBox(height: 20),
+              
+              // Especificações
+              _buildSectionCard(
+                title: 'Especificações',
                 children: [
-                  Row(
-                    children: [
-                      Text(
-                        'Carregar imagens da viatura',
-                        style: TextStyle(color: Colors.grey[600], fontSize: 16),
-                      ),
-                      Spacer(),
-                      IconButton(
-                        icon: Icon(Icons.add_a_photo, color: Colors.blue),
-                        onPressed: _pickImages,
-                      ),
-                    ],
-                  ),
-                  SizedBox(height: 8),
-                  _selectedImages.isEmpty
-                      ? Text('Nenhuma imagem selecionada', style: TextStyle(color: Colors.grey[400]))
-                      : SizedBox(
-                          height: 80,
-                          child: ListView.separated(
-                            scrollDirection: Axis.horizontal,
-                            itemCount: _selectedImages.length,
-                            separatorBuilder: (_, __) => SizedBox(width: 8),
-                            itemBuilder: (context, index) {
-                              return Stack(
-                                children: [
-                                  ClipRRect(
-                                    borderRadius: BorderRadius.circular(8),
-                                    child: Image.file(
-                                      File(_selectedImages[index].path),
-                                      width: 80,
-                                      height: 80,
-                                      fit: BoxFit.cover,
-                                    ),
-                                  ),
-                                  Positioned(
-                                    top: 2,
-                                    right: 2,
-                                    child: GestureDetector(
-                                      onTap: () {
-                                        setState(() {
-                                          _selectedImages.removeAt(index);
-                                        });
-                                      },
-                                      child: Container(
-                                        decoration: BoxDecoration(
-                                          color: Colors.black54,
-                                          shape: BoxShape.circle,
-                                        ),
-                                        child: Icon(Icons.close, color: Colors.white, size: 18),
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              );
-                            },
-                          ),
-                        ),
+                  _buildColorSelector(),
+                  SizedBox(height: 20),
+                  _buildFuelTypeSelector(),
+                  SizedBox(height: 20),
+                  _buildTransmissionSeatsRow(),
+                  SizedBox(height: 16),
+                  _buildMileageField(),
                 ],
               ),
-            ),
-
-            SizedBox(height: 16),
-
-            // Matrícula e Quilometragem
-            Row(
-              children: [
-                Expanded(
-                  child: _buildTextField(
-                    controller: _plateController,
-                    hint: 'Número da Matrícula',
-                  ),
-                ),
-                SizedBox(width: 16),
-                Expanded(
-                  child: _buildTextField(
-                    controller: _mileageController,
-                    hint: 'Quilometragem',
-                    keyboardType: TextInputType.number,
-                  ),
-                ),
-              ],
-            ),
-
-            SizedBox(height: 16),
-            // Campo Localização
-            Container(
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: Colors.grey[300]!),
+              
+              SizedBox(height: 20),
+              
+              // Preços
+              _buildSectionCard(
+                title: 'Preços de Aluguer',
+                children: [
+                  _buildPriceRow(),
+                ],
               ),
-              child: TextField(
-                controller: _localizacaoController,
-                decoration: InputDecoration(
-                  hintText: 'Localização',
-                  hintStyle: TextStyle(color: Colors.grey[500]),
-                  border: InputBorder.none,
-                  contentPadding: EdgeInsets.all(16),
-                ),
+              
+              SizedBox(height: 20),
+              
+              // Configurações
+              _buildSectionCard(
+                title: 'Configurações',
+                children: [
+                  _buildServiceTypeField(),
+                  SizedBox(height: 16),
+                  _buildSwitchesRow(),
+                ],
               ),
-            ),
-
-            SizedBox(height: 20),
-
-            // Cores
-            Text(
-              'Cor',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-                color: Colors.black,
+              
+              SizedBox(height: 20),
+              
+              // Descrição
+              _buildSectionCard(
+                title: 'Descrição',
+                children: [
+                  _buildDescriptionField(),
+                ],
               ),
-            ),
-
-            SizedBox(height: 12),
-
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-              children: colors.map((color) {
-                Color colorValue = _getColorFromName(color);
-                bool isSelected = selectedColor == color;
-
-                return GestureDetector(
-                  onTap: () {
-                    setState(() {
-                      selectedColor = color;
-                    });
-                  },
-                  child: Container(
-                    width: 50,
-                    height: 50,
-                    decoration: BoxDecoration(
-                      color: colorValue,
-                      shape: BoxShape.circle,
-                      border: Border.all(
-                        color: isSelected ? Colors.blue : Colors.grey[300]!,
-                        width: isSelected ? 3 : 1,
-                      ),
-                    ),
-                    child: isSelected
-                        ? Icon(Icons.check, color: Colors.white, size: 20)
-                        : null,
-                  ),
-                );
-              }).toList(),
-            ),
-
-            SizedBox(height: 20),
-
-            // Tipo de Combustível
-            Text(
-              'Tipo de Combustível',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-                color: Colors.black,
-              ),
-            ),
-
-            SizedBox(height: 12),
-
-            Row(
-              children: fuelTypes.map((fuel) {
-                bool isSelected = selectedFuelType == fuel;
-                return Expanded(
-                  child: GestureDetector(
-                    onTap: () {
-                      setState(() {
-                        selectedFuelType = fuel;
-                      });
-                    },
-                    child: Container(
-                      margin: EdgeInsets.only(right: 8),
-                      padding: EdgeInsets.symmetric(vertical: 12),
-                      decoration: BoxDecoration(
-                        color: isSelected ? Color(0xFF2F3E3A) : Colors.white,
-                        borderRadius: BorderRadius.circular(8),
-                        border: Border.all(color: Colors.grey[300]!),
-                      ),
-                      child: Center(
-                        child: Text(
-                          fuel,
-                          style: TextStyle(
-                            color: isSelected ? Colors.white : Colors.black,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                );
-              }).toList(),
-            ),
-
-            SizedBox(height: 20),
-
-            // Transmissão e Lugares
-            Row(
-              children: [
-                Expanded(
-                  child: _buildDropdown(
-                    value: selectedTransmission,
-                    items: transmissions,
-                    hint: 'Transmissão',
-                    onChanged: (value) {
-                      setState(() {
-                        selectedTransmission = value!;
-                      });
-                    },
-                  ),
-                ),
-                SizedBox(width: 16),
-                Expanded(
-                  child: _buildDropdown(
-                    value: selectedSeats.toString(),
-                    items: ['2', '4', '5', '7', '8'],
-                    hint: 'Lugares',
-                    onChanged: (value) {
-                      setState(() {
-                        selectedSeats = int.parse(value!);
-                      });
-                    },
-                  ),
-                ),
-              ],
-            ),
-
-            SizedBox(height: 20),
-
-            // Switches para Seguro e Disponibilidade
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Expanded(
-                  child: Row(
-                    children: [
-                      Switch(
-                        value: hasInsurance,
-                        onChanged: (value) {
-                          setState(() {
-                            hasInsurance = value;
-                          });
-                        },
-                        activeColor: Color(0xFF2F3E3A),
-                      ),
-                      Text('Tem Seguro'),
-                    ],
-                  ),
-                ),
-                Expanded(
-                  child: Row(
-                    children: [
-                      Switch(
-                        value: isAvailable,
-                        onChanged: (value) {
-                          setState(() {
-                            isAvailable = value;
-                          });
-                        },
-                        activeColor: Color(0xFF2F3E3A),
-                      ),
-                      Text('Disponível'),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-
-            SizedBox(height: 16),
-
-            // Descrição
-            Container(
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: Colors.grey[300]!),
-              ),
-              child: TextField(
-                controller: _descriptionController,
-                maxLines: 4,
-                maxLength: 1000,
-                decoration: InputDecoration(
-                  hintText: 'Insira aqui a descrição...',
-                  hintStyle: TextStyle(color: Colors.grey[500]),
-                  border: InputBorder.none,
-                  contentPadding: EdgeInsets.all(16),
-                ),
-              ),
-            ),
-
-            SizedBox(height: 20),
-
-            // Termos e condições
-            Row(
-              children: [
-                Checkbox(
-                  value: termsAccepted,
-                  onChanged: (value) {
-                    setState(() {
-                      termsAccepted = value!;
-                    });
-                  },
-                  activeColor: Color(0xFF2F3E3A),
-                ),
-                Expanded(
-                  child: GestureDetector(
-                    onTap: () {
-                      setState(() {
-                        termsAccepted = !termsAccepted;
-                      });
-                    },
-                    child: Text(
-                      'Termos e continuar',
-                      style: TextStyle(color: Colors.grey[600], fontSize: 14),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-
-            SizedBox(height: 32),
-
-            // Tipo de Serviço
-            SizedBox(height: 16),
-            DropdownButtonFormField<String>(
-              value: _serviceType.isNotEmpty ? _serviceType : null,
-              items: _serviceTypes.map((type) => DropdownMenuItem(
-                value: type,
-                child: Text(type),
-              )).toList(),
-              onChanged: (value) {
-                setState(() {
-                  _serviceType = value!;
-                });
-              },
-              decoration: InputDecoration(
-                labelText: 'Tipo de Serviço',
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-              ),
-              validator: (value) {
-                if (value == null || value.isEmpty) {
-                  return 'Selecione o tipo de serviço';
-                }
-                return null;
-              },
-            ),
-
-            // Botão Submit
-            SizedBox(
-              width: double.infinity,
-              height: 56,
-              child: ElevatedButton(
-                onPressed: termsAccepted && !_isLoading
-                    ? _submitVehicle
-                    : null,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Color(0xFF2F3E3A),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(28),
-                  ),
-                ),
-                child: Text(
-                  'Submeter',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ),
-            ),
-
-            if (_isLoading) ...[
-              SizedBox(height: 16),
-              Center(child: CircularProgressIndicator()),
+              
+              SizedBox(height: 20),
+              
+              // Termos e Botão
+              _buildTermsAndSubmit(),
+              
+              SizedBox(height: 40),
             ],
-
-            SizedBox(height: 40),
-          ],
+          ),
         ),
       ),
+    );
+  }
+
+  Widget _buildSectionCard({required String title, required List<Widget> children}) {
+    return Container(
+      padding: EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+            offset: Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            title,
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+              color: Colors.black87,
+            ),
+          ),
+          SizedBox(height: 16),
+          ...children,
+        ],
+      ),
+    );
+  }
+
+  Widget _buildImageSection() {
+    return Container(
+      padding: EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+            offset: Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Text(
+                'Fotos do Veículo',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.black87,
+                ),
+              ),
+              Spacer(),
+              IconButton(
+                icon: Icon(Icons.add_photo_alternate, color: Color(0xFF2F3E3A)),
+                onPressed: _pickImages,
+              ),
+            ],
+          ),
+          SizedBox(height: 16),
+          _selectedImages.isEmpty
+              ? Container(
+                  height: 120,
+                  decoration: BoxDecoration(
+                    color: Colors.grey[50],
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: Colors.grey[300]!),
+                  ),
+                  child: Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(Icons.camera_alt, size: 40, color: Colors.grey[400]),
+                        SizedBox(height: 8),
+                        Text(
+                          'Adicionar fotos',
+                          style: TextStyle(color: Colors.grey[600]),
+                        ),
+                      ],
+                    ),
+                  ),
+                )
+              : Container(
+                  height: 120,
+                  child: ListView.separated(
+                    scrollDirection: Axis.horizontal,
+                    itemCount: _selectedImages.length,
+                    separatorBuilder: (_, __) => SizedBox(width: 12),
+                    itemBuilder: (context, index) {
+                      return Stack(
+                        children: [
+                          ClipRRect(
+                            borderRadius: BorderRadius.circular(12),
+                            child: _buildImageWidget(_selectedImages[index]),
+                          ),
+                          Positioned(
+                            top: 4,
+                            right: 4,
+                            child: GestureDetector(
+                              onTap: () {
+                                setState(() {
+                                  _selectedImages.removeAt(index);
+                                });
+                              },
+                              child: Container(
+                                padding: EdgeInsets.all(4),
+                                decoration: BoxDecoration(
+                                  color: Colors.black54,
+                                  shape: BoxShape.circle,
+                                ),
+                                child: Icon(Icons.close, color: Colors.white, size: 16),
+                              ),
+                            ),
+                          ),
+                        ],
+                      );
+                    },
+                  ),
+                ),
+        ],
+      ),
+    );
+  }
+
+  // Widget para exibir imagem compatível com web e mobile
+  Widget _buildImageWidget(XFile imageFile) {
+    if (kIsWeb) {
+      return Image.network(
+        imageFile.path,
+        width: 120,
+        height: 120,
+        fit: BoxFit.cover,
+        errorBuilder: (context, error, stackTrace) {
+          return Container(
+            width: 120,
+            height: 120,
+            color: Colors.grey[300],
+            child: Icon(Icons.error, color: Colors.red),
+          );
+        },
+      );
+    } else {
+      return Image.file(
+        File(imageFile.path),
+        width: 120,
+        height: 120,
+        fit: BoxFit.cover,
+        errorBuilder: (context, error, stackTrace) {
+          return Container(
+            width: 120,
+            height: 120,
+            color: Colors.grey[300],
+            child: Icon(Icons.error, color: Colors.red),
+          );
+        },
+      );
+    }
+  }
+
+  Widget _buildBrandModelRow() {
+    return Row(
+      children: [
+        Expanded(
+          child: _buildDropdownField(
+            value: selectedBrand,
+            items: carBrands,
+            hint: 'Marca',
+            onChanged: (value) {
+              setState(() {
+                selectedBrand = value!;
+              });
+            },
+          ),
+        ),
+        SizedBox(width: 16),
+        Expanded(
+          child: _buildTextField(
+            controller: _modelController,
+            hint: 'Modelo',
+            validator: (value) {
+              if (value == null || value.isEmpty) {
+                return 'Insira o modelo';
+              }
+              return null;
+            },
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildYearClassRow() {
+    return Row(
+      children: [
+        Expanded(
+          child: _buildTextField(
+            controller: _yearController,
+            hint: 'Ano',
+            keyboardType: TextInputType.number,
+            validator: (value) {
+              if (value == null || value.isEmpty) {
+                return 'Insira o ano';
+              }
+              return null;
+            },
+          ),
+        ),
+        SizedBox(width: 16),
+        Expanded(
+          child: _buildDropdownField(
+            value: selectedClass,
+            items: carClasses,
+            hint: 'Classe',
+            onChanged: (value) {
+              setState(() {
+                selectedClass = value!;
+              });
+            },
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildPlateLocationRow() {
+    return Row(
+      children: [
+        Expanded(
+          child: _buildTextField(
+            controller: _plateController,
+            hint: 'Matrícula',
+            validator: (value) {
+              if (value == null || value.isEmpty) {
+                return 'Insira a matrícula';
+              }
+              return null;
+            },
+          ),
+        ),
+        SizedBox(width: 16),
+        Expanded(
+          child: _buildTextField(
+            controller: _localizacaoController,
+            hint: 'Localização',
+            validator: (value) {
+              if (value == null || value.isEmpty) {
+                return 'Insira a localização';
+              }
+              return null;
+            },
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildColorSelector() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Cor',
+          style: TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.w600,
+            color: Colors.black87,
+          ),
+        ),
+        SizedBox(height: 12),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+          children: colors.map((color) {
+            Color colorValue = _getColorFromName(color);
+            bool isSelected = selectedColor == color;
+
+            return GestureDetector(
+              onTap: () {
+                setState(() {
+                  selectedColor = color;
+                });
+              },
+              child: Container(
+                width: 45,
+                height: 45,
+                decoration: BoxDecoration(
+                  color: colorValue,
+                  shape: BoxShape.circle,
+                  border: Border.all(
+                    color: isSelected ? Color(0xFF2F3E3A) : Colors.grey[300]!,
+                    width: isSelected ? 3 : 1,
+                  ),
+                ),
+                child: isSelected
+                    ? Icon(Icons.check, color: Colors.white, size: 18)
+                    : null,
+              ),
+            );
+          }).toList(),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildFuelTypeSelector() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Combustível',
+          style: TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.w600,
+            color: Colors.black87,
+          ),
+        ),
+        SizedBox(height: 12),
+        Row(
+          children: fuelTypes.map((fuel) {
+            bool isSelected = selectedFuelType == fuel;
+            return Expanded(
+              child: GestureDetector(
+                onTap: () {
+                  setState(() {
+                    selectedFuelType = fuel;
+                  });
+                },
+                child: Container(
+                  margin: EdgeInsets.only(right: fuel == fuelTypes.last ? 0 : 8),
+                  padding: EdgeInsets.symmetric(vertical: 12),
+                  decoration: BoxDecoration(
+                    color: isSelected ? Color(0xFF2F3E3A) : Colors.grey[100],
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(
+                      color: isSelected ? Color(0xFF2F3E3A) : Colors.grey[300]!,
+                    ),
+                  ),
+                  child: Center(
+                    child: Text(
+                      fuel,
+                      style: TextStyle(
+                        color: isSelected ? Colors.white : Colors.black87,
+                        fontWeight: FontWeight.w500,
+                        fontSize: 13,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            );
+          }).toList(),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildTransmissionSeatsRow() {
+    return Row(
+      children: [
+        Expanded(
+          child: _buildDropdownField(
+            value: selectedTransmission,
+            items: transmissions,
+            hint: 'Transmissão',
+            onChanged: (value) {
+              setState(() {
+                selectedTransmission = value!;
+              });
+            },
+          ),
+        ),
+        SizedBox(width: 16),
+        Expanded(
+          child: _buildDropdownField(
+            value: selectedSeats.toString(),
+            items: ['2', '4', '5', '7', '8'],
+            hint: 'Lugares',
+            onChanged: (value) {
+              setState(() {
+                selectedSeats = int.parse(value!);
+              });
+            },
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildMileageField() {
+    return _buildTextField(
+      controller: _mileageController,
+      hint: 'Quilometragem',
+      keyboardType: TextInputType.number,
+      validator: (value) {
+        if (value == null || value.isEmpty) {
+          return 'Insira a quilometragem';
+        }
+        return null;
+      },
+    );
+  }
+
+  Widget _buildPriceRow() {
+    return Row(
+      children: [
+        Expanded(
+          child: _buildTextField(
+            controller: _dailyPriceController,
+            hint: 'Diário',
+            keyboardType: TextInputType.number,
+            validator: (value) {
+              if (value == null || value.isEmpty) {
+                return 'Preço obrigatório';
+              }
+              return null;
+            },
+          ),
+        ),
+        SizedBox(width: 12),
+        Expanded(
+          child: _buildTextField(
+            controller: _weeklyPriceController,
+            hint: 'Semanal',
+            keyboardType: TextInputType.number,
+          ),
+        ),
+        SizedBox(width: 12),
+        Expanded(
+          child: _buildTextField(
+            controller: _monthlyPriceController,
+            hint: 'Mensal',
+            keyboardType: TextInputType.number,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildServiceTypeField() {
+    return _buildDropdownField(
+      value: _serviceType.isNotEmpty ? _serviceType : null,
+      items: _serviceTypes,
+      hint: 'Tipo de Serviço',
+      onChanged: (value) {
+        setState(() {
+          _serviceType = value!;
+        });
+      },
+    );
+  }
+
+  Widget _buildSwitchesRow() {
+    return Row(
+      children: [
+        Expanded(
+          child: Row(
+            children: [
+              Switch(
+                value: hasInsurance,
+                onChanged: (value) {
+                  setState(() {
+                    hasInsurance = value;
+                  });
+                },
+                activeColor: Color(0xFF2F3E3A),
+              ),
+              Text('Tem Seguro', style: TextStyle(fontSize: 14)),
+            ],
+          ),
+        ),
+        Expanded(
+          child: Row(
+            children: [
+              Switch(
+                value: isAvailable,
+                onChanged: (value) {
+                  setState(() {
+                    isAvailable = value;
+                  });
+                },
+                activeColor: Color(0xFF2F3E3A),
+              ),
+              Text('Disponível', style: TextStyle(fontSize: 14)),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildDescriptionField() {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.grey[50],
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.grey[300]!),
+      ),
+      child: TextField(
+        controller: _descriptionController,
+        maxLines: 4,
+        maxLength: 1000,
+        decoration: InputDecoration(
+          hintText: 'Descrição do veículo...',
+          hintStyle: TextStyle(color: Colors.grey[500]),
+          border: InputBorder.none,
+          contentPadding: EdgeInsets.all(16),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildTermsAndSubmit() {
+    return Column(
+      children: [
+        Row(
+          children: [
+            Checkbox(
+              value: termsAccepted,
+              onChanged: (value) {
+                setState(() {
+                  termsAccepted = value!;
+                });
+              },
+              activeColor: Color(0xFF2F3E3A),
+            ),
+            Expanded(
+              child: GestureDetector(
+                onTap: () {
+                  setState(() {
+                    termsAccepted = !termsAccepted;
+                  });
+                },
+                child: Text(
+                  'Aceito os termos e condições',
+                  style: TextStyle(color: Colors.grey[600], fontSize: 14),
+                ),
+              ),
+            ),
+          ],
+        ),
+        SizedBox(height: 24),
+        SizedBox(
+          width: double.infinity,
+          height: 56,
+          child: ElevatedButton(
+            onPressed: termsAccepted && !_isLoading ? _submitVehicle : null,
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Color(0xFF2F3E3A),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+              elevation: 0,
+            ),
+            child: _isLoading
+                ? SizedBox(
+                    height: 20,
+                    width: 20,
+                    child: CircularProgressIndicator(
+                      color: Colors.white,
+                      strokeWidth: 2,
+                    ),
+                  )
+                : Text(
+                    'Adicionar Veículo',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+          ),
+        ),
+      ],
     );
   }
 
@@ -661,16 +746,18 @@ class _VehicleRegistrationScreenState extends State<VehicleRegistrationScreen> {
     required TextEditingController controller,
     required String hint,
     TextInputType? keyboardType,
+    String? Function(String?)? validator,
   }) {
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Colors.grey[50],
         borderRadius: BorderRadius.circular(12),
         border: Border.all(color: Colors.grey[300]!),
       ),
-      child: TextField(
+      child: TextFormField(
         controller: controller,
         keyboardType: keyboardType,
+        validator: validator,
         decoration: InputDecoration(
           hintText: hint,
           hintStyle: TextStyle(color: Colors.grey[500]),
@@ -681,8 +768,8 @@ class _VehicleRegistrationScreenState extends State<VehicleRegistrationScreen> {
     );
   }
 
-  Widget _buildDropdown({
-    required String value,
+  Widget _buildDropdownField({
+    required String? value,
     required List<String> items,
     required String hint,
     required Function(String?) onChanged,
@@ -690,7 +777,7 @@ class _VehicleRegistrationScreenState extends State<VehicleRegistrationScreen> {
     return Container(
       padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Colors.grey[50],
         borderRadius: BorderRadius.circular(12),
         border: Border.all(color: Colors.grey[300]!),
       ),
@@ -698,7 +785,8 @@ class _VehicleRegistrationScreenState extends State<VehicleRegistrationScreen> {
         child: DropdownButton<String>(
           value: value,
           isExpanded: true,
-          style: TextStyle(color: Colors.black, fontSize: 16),
+          hint: Text(hint, style: TextStyle(color: Colors.grey[500])),
+          style: TextStyle(color: Colors.black87, fontSize: 16),
           items: items.map((item) {
             return DropdownMenuItem(value: item, child: Text(item));
           }).toList(),
@@ -728,39 +816,91 @@ class _VehicleRegistrationScreenState extends State<VehicleRegistrationScreen> {
   }
 
   Future<void> _pickImages() async {
-    final List<XFile>? picked = await _picker.pickMultiImage(imageQuality: 80);
-    if (picked != null && picked.isNotEmpty) {
-      setState(() {
-        _selectedImages.addAll(picked);
-      });
+    try {
+      if (kIsWeb) {
+        // Para web, use pickMultiImage
+        final List<XFile>? picked = await _picker.pickMultiImage(
+          imageQuality: 80,
+          maxWidth: 1920,
+          maxHeight: 1080,
+        );
+        if (picked != null && picked.isNotEmpty) {
+          setState(() {
+            _selectedImages.addAll(picked);
+          });
+        }
+      } else {
+        // Para mobile, use pickMultiImage também
+        final List<XFile>? picked = await _picker.pickMultiImage(
+          imageQuality: 80,
+          maxWidth: 1920,
+          maxHeight: 1080,
+        );
+        if (picked != null && picked.isNotEmpty) {
+          setState(() {
+            _selectedImages.addAll(picked);
+          });
+        }
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Erro ao selecionar imagens: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
     }
   }
 
   void _submitVehicle() async {
-    setState(() { _isLoading = true; });
-    if (_localizacaoController.text.trim().isEmpty) {
-      setState(() { _isLoading = false; });
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Informe a localização do carro.'), backgroundColor: Colors.red),
-      );
+    if (!_formKey.currentState!.validate()) {
       return;
     }
+
+    setState(() {
+      _isLoading = true;
+    });
+
     if (_serviceType.isEmpty) {
-      setState(() { _isLoading = false; });
+      setState(() {
+        _isLoading = false;
+      });
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Selecione o tipo de serviço.'), backgroundColor: Colors.red),
+        SnackBar(
+          content: Text('Selecione o tipo de serviço.'),
+          backgroundColor: Colors.red,
+        ),
       );
       return;
     }
+
+    // Validar imagens antes do upload
+    if (_selectedImages.isNotEmpty) {
+      List<XFile> validImages = [];
+      for (XFile image in _selectedImages) {
+        if (await ImageUploadService.validateImage(image)) {
+          validImages.add(image);
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Algumas imagens são muito grandes ou formato inválido'),
+              backgroundColor: Colors.orange,
+            ),
+          );
+        }
+      }
+      _selectedImages = validImages;
+    }
+
     Map<String, dynamic> vehicleData = {
       'marca': selectedBrand,
-      'modelo': _modelController.text,
+      'modelo': _modelController.text.trim(),
       'ano': int.tryParse(_yearController.text) ?? 0,
       'precoPorDia': double.tryParse(_dailyPriceController.text) ?? 0.0,
       'precoPorSemana': double.tryParse(_weeklyPriceController.text) ?? 0.0,
       'precoPorMes': double.tryParse(_monthlyPriceController.text) ?? 0.0,
       'classe': selectedClass,
-      'descricao': _descriptionController.text,
+      'descricao': _descriptionController.text.trim(),
       'cor': selectedColor,
       'combustivel': selectedFuelType,
       'quilometragem': int.tryParse(_mileageController.text) ?? 0,
@@ -768,42 +908,56 @@ class _VehicleRegistrationScreenState extends State<VehicleRegistrationScreen> {
       'transmissao': selectedTransmission,
       'disponibilidade': isAvailable,
       'seguro': hasInsurance,
-      'placa': _plateController.text,
+      'placa': _plateController.text.trim(),
       'localizacao': _localizacaoController.text.trim(),
       'categorias': '',
       'featured': false,
       'serviceType': _serviceType,
     };
+
     try {
-      final car = await OwnerService.createCar(
+      // Usar o novo serviço que inclui upload de imagens
+      final result = await OwnerServiceImageUpload.createCarWithImages(
         vehicleData,
-        _selectedImages.map((xfile) => File(xfile.path)).toList(),
+        _selectedImages,
       );
+
       if (mounted) {
+        String message = 'Veículo cadastrado com sucesso!';
+        if (_selectedImages.isNotEmpty) {
+          message += ' ${result['uploaded_images']}/${result['total_images']} imagens enviadas.';
+        }
+        
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Viatura cadastrada com sucesso!'),
+            content: Text(message),
             backgroundColor: Color(0xFF2F3E3A),
+            duration: Duration(seconds: 3),
           ),
         );
         Navigator.pop(context);
       }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Erro ao cadastrar viatura: $e'),
-          backgroundColor: Colors.red,
-        ),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Erro ao cadastrar veículo: $e'),
+            backgroundColor: Colors.red,
+            duration: Duration(seconds: 4),
+          ),
+        );
+      }
     } finally {
-      setState(() { _isLoading = false; });
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
     }
   }
 
   @override
   void dispose() {
-    _vehicleIdController.dispose();
-    _ownerIdController.dispose();
     _modelController.dispose();
     _yearController.dispose();
     _dailyPriceController.dispose();
@@ -814,13 +968,5 @@ class _VehicleRegistrationScreenState extends State<VehicleRegistrationScreen> {
     _plateController.dispose();
     _localizacaoController.dispose();
     super.dispose();
-  }
-
-  String fixImageUrl(String url) {
-    if (url.startsWith('http')) {
-      return url.replaceFirst('localhost', kIsWeb ? 'localhost' : '10.0.2.2');
-    } else {
-      return '$baseUrl/$url';
-    }
   }
 }

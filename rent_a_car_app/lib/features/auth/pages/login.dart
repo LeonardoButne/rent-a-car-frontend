@@ -2,6 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:rent_a_car_app/features/auth/pages/register.dart';
 import 'package:rent_a_car_app/features/auth/pages/otp_verification_screen.dart';
 import 'package:rent_a_car_app/core/services/api_service.dart';
+import 'package:rent_a_car_app/features/cars/pages/home_screen.dart';
+import 'package:rent_a_car_app/core/utils/device_id.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:dio/dio.dart';
 
 class Login extends StatefulWidget {
   const Login({super.key});
@@ -17,12 +21,6 @@ class _LoginState extends State<Login> {
   bool _obscurePassword = true;
   bool _isLoading = false;
   String? _errorMessage;
-  String _accountType = 'Cliente';
-  final Map<String, String> _accountTypeMap = {
-    'Cliente': 'client',
-    'Proprietário': 'owner',
-  };
-  final List<String> _accountTypes = ['Cliente', 'Proprietário'];
 
   Future<void> _login() async {
     setState(() {
@@ -30,30 +28,49 @@ class _LoginState extends State<Login> {
       _errorMessage = null;
     });
 
+    final deviceId = await getDeviceId();
     try {
       final api = ApiService();
-      final typeAccount = _accountTypeMap[_accountType]!;
-      final endpoint = typeAccount == 'owner' ? '/owner/login' : '/client/login';
-      final response = await api.post(endpoint, {
+      final response = await api.post('/auth/login', {
         'email': _emailController.text.trim(),
         'password': _passwordController.text.trim(),
-        'typeAccount': typeAccount,
+        'deviceId': deviceId,
       });
 
-      if (response.statusCode == 200) {
+      final data = response.data;
+      final token = data['token'];
+      if (token != null) {
+        // Login direto
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setString('auth_token', token);
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => const HomeScreen()),
+        );
+      } else {
+        setState(() {
+          _errorMessage = data['error'] ?? 'Credenciais inválidas';
+        });
+      }
+    } on DioException catch (e) {
+      final data = e.response?.data;
+      if (data != null && data['otp_required'] == true) {
+        // Precisa de OTP
         Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (context) => OTPVerificationScreen(
+            builder: (_) => OTPVerificationScreen(
               email: _emailController.text.trim(),
+              deviceId: deviceId,
               isLoginOtp: true,
-              typeAccount: typeAccount,
             ),
           ),
         );
       } else {
         setState(() {
-          _errorMessage = 'Credenciais inválidas. Tente novamente.';
+          _errorMessage = data != null && data['error'] != null
+              ? data['error']
+              : 'Credenciais inválidas';
         });
       }
     } catch (e) {
@@ -138,24 +155,6 @@ class _LoginState extends State<Login> {
                   SizedBox(height: 40),
 
                   // Campo de email
-                  SizedBox(height: 16),
-                  DropdownButtonFormField<String>(
-                    value: _accountType,
-                    items: _accountTypes.map((type) => DropdownMenuItem(
-                      value: type,
-                      child: Text(type),
-                    )).toList(),
-                    onChanged: (value) {
-                      setState(() {
-                        _accountType = value!;
-                      });
-                    },
-                    decoration: InputDecoration(
-                      labelText: 'Tipo de Conta',
-                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                      contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                    ),
-                  ),
                   SizedBox(height: 16),
                   Container(
                     decoration: BoxDecoration(
@@ -308,7 +307,10 @@ class _LoginState extends State<Login> {
                     height: 56,
                     child: OutlinedButton(
                       onPressed: () {
-                        // Acção de registo
+                        Navigator.pushReplacement(
+                          context,
+                          MaterialPageRoute(builder: (context) => Register()),
+                        );
                       },
                       style: OutlinedButton.styleFrom(
                         side: BorderSide(color: Colors.grey[300]!),
