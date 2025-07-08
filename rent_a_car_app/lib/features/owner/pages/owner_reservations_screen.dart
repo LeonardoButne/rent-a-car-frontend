@@ -119,7 +119,7 @@ class _OwnerReservationsScreenState extends State<OwnerReservationsScreen> {
                         SizedBox(height: 8),
                         Text('Observação: ${r.notes!}', style: TextStyle(color: Colors.grey[700])),
                       ],
-                      if (r.status.toLowerCase() == 'pendente') ...[
+                      if (r.status.toLowerCase() == 'pending') ...[
                         SizedBox(height: 12),
                         Row(
                           children: [
@@ -131,7 +131,24 @@ class _OwnerReservationsScreenState extends State<OwnerReservationsScreen> {
                                   backgroundColor: Colors.green[700],
                                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                                 ),
-                                onPressed: _isLoadingAction ? null : () => _updateStatus(r.id, 'aprovada'),
+                                onPressed: _isLoadingAction ? null : () async {
+                                  setState(() { _isLoadingAction = true; });
+                                  try {
+                                    await OwnerService.approveReservation(r.id);
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(content: Text('Reserva aprovada com sucesso!'), backgroundColor: Colors.green),
+                                    );
+                                    setState(() {
+                                      _reservationsFuture = OwnerService.getOwnerReservations();
+                                    });
+                                  } catch (e) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(content: Text('Erro ao aprovar reserva: $e'), backgroundColor: Colors.red),
+                                    );
+                                  } finally {
+                                    setState(() { _isLoadingAction = false; });
+                                  }
+                                },
                               ),
                             ),
                             SizedBox(width: 12),
@@ -143,7 +160,24 @@ class _OwnerReservationsScreenState extends State<OwnerReservationsScreen> {
                                   backgroundColor: Colors.red[700],
                                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                                 ),
-                                onPressed: _isLoadingAction ? null : () => _updateStatus(r.id, 'rejeitada'),
+                                onPressed: _isLoadingAction ? null : () async {
+                                  setState(() { _isLoadingAction = true; });
+                                  try {
+                                    await OwnerService.rejectReservation(r.id);
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(content: Text('Reserva rejeitada.'), backgroundColor: Colors.red),
+                                    );
+                                    setState(() {
+                                      _reservationsFuture = OwnerService.getOwnerReservations();
+                                    });
+                                  } catch (e) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(content: Text('Erro ao rejeitar reserva: $e'), backgroundColor: Colors.red),
+                                    );
+                                  } finally {
+                                    setState(() { _isLoadingAction = false; });
+                                  }
+                                },
                               ),
                             ),
                           ],
@@ -166,11 +200,11 @@ class _OwnerReservationsScreenState extends State<OwnerReservationsScreen> {
 
   Color _statusColor(String status) {
     switch (status.toLowerCase()) {
-      case 'aprovada':
+      case 'approved':
         return Colors.green;
-      case 'rejeitada':
+      case 'rejected':
         return Colors.red;
-      case 'pendente':
+      case 'pending':
       default:
         return Colors.orange;
     }

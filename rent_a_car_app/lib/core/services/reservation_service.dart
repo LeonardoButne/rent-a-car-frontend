@@ -77,132 +77,26 @@ class ReservationService {
     );
     return Reservation.fromJson(response.data);
   }
-} 
 
-
-
-/* apreciar
-  
-  //  NOVOS MÉTODOS (Proprietário)
-  
-
-  /// Busca todas as reservas solicitadas para os carros do proprietário
-  static Future<List<Reservation>> getRequestedReservations() async {
-    final token = await _getToken();
-    final response = await _api.get(
-      '/owner/reservations/requested',
-      headers: {'Authorization': 'Bearer $token'},
-    );
-    final List<dynamic> data = response.data;
-    return data.map((json) => Reservation.fromJson(json)).toList();
-  }
-
-  /// Busca detalhes de uma reserva solicitada específica
-  static Future<Reservation> getRequestedReservationById(String reservationId) async {
-    final token = await _getToken();
-    final response = await _api.get(
-      '/owner/reservations/$reservationId',
-      headers: {'Authorization': 'Bearer $token'},
-    );
-    return Reservation.fromJson(response.data);
-  }
-
-  /// Aprova uma reserva pendente
-  static Future<Reservation> approveReservation(String reservationId) async {
+  static Future<Reservation> activateReservation(String reservationId) async {
     final token = await _getToken();
     final response = await _api.patch(
-      '/owner/reservations/$reservationId/approve',
+      '/client/reservations/$reservationId/activate',
       {},
       headers: {'Authorization': 'Bearer $token'},
     );
     return Reservation.fromJson(response.data);
   }
 
-  /// Rejeita uma reserva pendente
-  static Future<Reservation> rejectReservation(String reservationId, {String? reason}) async {
+  static Future<Reservation> finishReservation(String reservationId) async {
     final token = await _getToken();
     final response = await _api.patch(
-      '/owner/reservations/$reservationId/reject',
-      {
-        if (reason != null) 'reason': reason,
-      },
+      '/client/reservations/$reservationId/complete',
+      {},
       headers: {'Authorization': 'Bearer $token'},
     );
     return Reservation.fromJson(response.data);
   }
-
-  /// Busca estatísticas de reservas para o proprietário
-  static Future<Map<String, dynamic>> getOwnerReservationStats() async {
-    final token = await _getToken();
-    final response = await _api.get(
-      '/owner/reservations/stats',
-      headers: {'Authorization': 'Bearer $token'},
-    );
-    return response.data;
-  }
-
-  /// Busca reservas por status específico (para proprietário)
-  static Future<List<Reservation>> getRequestedReservationsByStatus(String status) async {
-    final token = await _getToken();
-    final response = await _api.get(
-      '/owner/reservations/requested?status=$status',
-      headers: {'Authorization': 'Bearer $token'},
-    );
-    final List<dynamic> data = response.data;
-    return data.map((json) => Reservation.fromJson(json)).toList();
-  }
-
-  /// Busca reservas de um carro específico (para proprietário)
-  static Future<List<Reservation>> getCarReservations(String carId) async {
-    final token = await _getToken();
-    final response = await _api.get(
-      '/owner/cars/$carId/reservations',
-      headers: {'Authorization': 'Bearer $token'},
-    );
-    final List<dynamic> data = response.data;
-    return data.map((json) => Reservation.fromJson(json)).toList();
-  }
-
-  /// Atualiza status de uma reserva com observações (proprietário)
-  static Future<Reservation> updateReservationStatus({
-    required String reservationId,
-    required String status,
-    String? notes,
-  }) async {
-    final token = await _getToken();
-    final response = await _api.patch(
-      '/owner/reservations/$reservationId/status',
-      {
-        'status': status,
-        if (notes != null) 'notes': notes,
-      },
-      headers: {'Authorization': 'Bearer $token'},
-    );
-    return Reservation.fromJson(response.data);
-  }
-
-  /// Marca reserva como concluída (após devolução do carro)
-  static Future<Reservation> completeReservation(String reservationId, {
-    String? notes,
-    double? finalKilometers,
-    bool? hasConditionalComments,
-  }) async {
-    final token = await _getToken();
-    final response = await _api.patch(
-      '/owner/reservations/$reservationId/complete',
-      {
-        if (notes != null) 'notes': notes,
-        if (finalKilometers != null) 'finalKilometers': finalKilometers,
-        if (hasConditionalComments != null) 'hasConditionalComments': hasConditionalComments,
-      },
-      headers: {'Authorization': 'Bearer $token'},
-    );
-    return Reservation.fromJson(response.data);
-  }
-
-  // ===========================
-  //  MÉTODOS UTILITÁRIOS
-  // ===========================
 
   /// Calcula o valor total da reserva baseado nas datas
   static double calculateReservationPrice({
@@ -213,7 +107,6 @@ class ReservationService {
     required double monthlyPrice,
   }) {
     final days = endDate.difference(startDate).inDays;
-    
     if (days >= 30) {
       final months = (days / 30).floor();
       final remainingDays = days % 30;
@@ -264,4 +157,4 @@ class ReservationService {
       }
     }
   }
-}*/
+}

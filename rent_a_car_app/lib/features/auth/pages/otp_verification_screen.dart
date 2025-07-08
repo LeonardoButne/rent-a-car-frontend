@@ -3,6 +3,7 @@ import 'package:pinput/pinput.dart';
 import 'package:rent_a_car_app/core/services/api_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:rent_a_car_app/features/cars/pages/home_screen.dart';
+import 'package:rent_a_car_app/features/auth/pages/login.dart';
 
 class OTPVerificationScreen extends StatefulWidget {
   final String email;
@@ -54,12 +55,13 @@ class _OTPVerificationScreenState extends State<OTPVerificationScreen> {
     });
     try {
       final api = ApiService();
-      final response = await api.post('/auth/verify-otp', {
+      final endpoint = widget.isLoginOtp ? '/auth/verify-otp' : '/auth/confirm-signup';
+      final response = await api.post(endpoint, {
         'email': widget.email,
         'otp': pin,
         'deviceId': widget.deviceId,
       });
-      print('Resposta OTP: ${response.data}');
+      print('Resposta OTP: [32m${response.data}[0m');
       print('Status: ${response.statusCode}');
       final responseData = response.data;
       final token = responseData['token'];
@@ -69,6 +71,20 @@ class _OTPVerificationScreenState extends State<OTPVerificationScreen> {
         if (mounted) {
           Navigator.of(context).pushAndRemoveUntil(
             MaterialPageRoute(builder: (context) => const HomeScreen()),
+            (Route<dynamic> route) => false,
+          );
+        }
+      } else if (response.statusCode == 200 && token == null && !widget.isLoginOtp) {
+        // Cadastro ativado, mas sem token: mostrar mensagem e ir para login
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Conta ativada! Faça login.'),
+              backgroundColor: Colors.green,
+            ),
+          );
+          Navigator.of(context).pushAndRemoveUntil(
+            MaterialPageRoute(builder: (context) => const Login()),
             (Route<dynamic> route) => false,
           );
         }
@@ -115,7 +131,7 @@ class _OTPVerificationScreenState extends State<OTPVerificationScreen> {
             backgroundColor: Colors.red,
           ),
         );
-      }
+  }
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(

@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:rent_a_car_app/core/models/reservation.dart';
 import 'package:rent_a_car_app/core/services/reservation_service.dart';
-import 'package:rent_a_car_app/features/auth/pages/reservations/reservation_details_screen.dart';
 import 'package:rent_a_car_app/features/cars/widgets/empty_reservation_state.dart';
 import 'package:rent_a_car_app/features/cars/widgets/error_reservations_state.dart';
 import 'package:rent_a_car_app/features/cars/widgets/reservation_list_item.dart';
@@ -30,16 +29,16 @@ class _MyReservationsScreenState extends State<MyReservationsScreen> {
   }
 
   void _navigateToDetails(String reservationId) async {
-    final result = await Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) =>
-            ReservationDetailsScreen(reservationId: reservationId),
-      ),
-    );
-    if (result == true) {
-      _refresh();
-    }
+    // final result = await Navigator.push(
+    //   context,
+    //   // MaterialPageRoute(
+    //   //   builder: (context) =>
+    //   //       // ReservationDetailsScreen(reservationId: reservationId),
+    //   // ),
+    // );
+    // if (result == true) {
+    //   _refresh();
+    // }
   }
 
   @override
@@ -80,10 +79,25 @@ class _MyReservationsScreenState extends State<MyReservationsScreen> {
                       itemCount: reservations.length,
                       separatorBuilder: (_, __) => const SizedBox(height: 16),
                       itemBuilder: (context, index) {
+                        final reservation = reservations[index];
                         return ReservationListItem(
-                          reservation: reservations[index],
-                          onTap: () =>
-                              _navigateToDetails(reservations[index].id),
+                          reservation: reservation,
+                          onTap: () => _navigateToDetails(reservation.id),
+                          onActivate: reservation.status == 'approved'
+                              ? () async {
+                                  try {
+                                    final activated = await ReservationService.activateReservation(reservation.id);
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      const SnackBar(content: Text('Reserva ativada! Aproveite seu carro.'), backgroundColor: Colors.blue),
+                                    );
+                                    _refresh();
+                                  } catch (e) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(content: Text('Erro ao ativar reserva: $e'), backgroundColor: Colors.red),
+                                    );
+                                  }
+                                }
+                              : null,
                         );
                       },
                     );

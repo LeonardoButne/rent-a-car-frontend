@@ -3,15 +3,18 @@ import 'package:intl/intl.dart';
 import 'package:rent_a_car_app/core/models/reservation.dart';
 import 'package:rent_a_car_app/core/utils/base_url.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:rent_a_car_app/core/services/reservation_service.dart';
 
 class ReservationListItem extends StatelessWidget {
   final Reservation reservation;
   final VoidCallback onTap;
+  final VoidCallback? onActivate;
 
   const ReservationListItem({
     super.key,
     required this.reservation,
     required this.onTap,
+    this.onActivate,
   });
 
   @override
@@ -51,7 +54,7 @@ class ReservationListItem extends StatelessWidget {
                     _buildStatusChip(reservation.status),
                     const SizedBox(height: 8),
                     Text(
-                      'MT ${reservation.price.toStringAsFixed(0)}',
+                      'MT  ${reservation.price.toStringAsFixed(0)}',
                       style: const TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.bold,
@@ -64,6 +67,58 @@ class ReservationListItem extends StatelessWidget {
             ),
             const SizedBox(height: 16),
             _buildDatesInfo(),
+            if (reservation.status == 'approved' && onActivate != null) ...[
+              const SizedBox(height: 12),
+              ElevatedButton.icon(
+                icon: const Icon(Icons.directions_car),
+                label: const Text('Retirar'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.blue,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                ),
+                onPressed: () async {
+                  final confirmed = await showDialog<bool>(
+                    context: context,
+                    builder: (context) => AlertDialog(
+                      title: const Text('Confirmar retirada'),
+                      content: const Text('Tem certeza que deseja retirar o carro agora?'),
+                      actions: [
+                        TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancelar')),
+                        ElevatedButton(onPressed: () => Navigator.pop(context, true), child: const Text('Confirmar')),
+                      ],
+                    ),
+                  );
+                  if (confirmed == true) {
+                    onActivate!();
+                  }
+                },
+              ),
+            ],
+            if (reservation.status == 'active') ...[
+              const SizedBox(height: 12),
+              ElevatedButton.icon(
+                icon: const Icon(Icons.check_circle),
+                label: const Text('Finalizar Reserva'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.green,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                ),
+                onPressed: () async {
+                  try {
+                    final finished = await ReservationService.finishReservation(reservation.id);
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Reserva finalizada com sucesso!'), backgroundColor: Colors.green),
+                    );
+                    // ignore: use_build_context_synchronously
+                    Navigator.of(context).pop(); // Fecha o dialog se estiver aberto
+                  } catch (e) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text('Erro ao finalizar reserva: $e'), backgroundColor: Colors.red),
+                    );
+                  }
+                },
+              ),
+            ],
           ],
         ),
       ),

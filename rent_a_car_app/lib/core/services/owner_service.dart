@@ -123,4 +123,16 @@ class OwnerService {
     final token = await _getToken();
     await _api.patch('/owner/reservations/$reservationId', {'status': status}, headers: {'Authorization': 'Bearer $token'});
   }
+
+  // 8. Aprovar Reserva
+  static Future<void> approveReservation(String reservationId) async {
+    final token = await _getToken();
+    await _api.patch('/owner/reservations/$reservationId/approve', {}, headers: {'Authorization': 'Bearer $token'});
+  }
+
+  // 9. Rejeitar Reserva
+  static Future<void> rejectReservation(String reservationId) async {
+    final token = await _getToken();
+    await _api.patch('/owner/reservations/$reservationId/reject', {}, headers: {'Authorization': 'Bearer $token'});
+  }
 } 

@@ -307,10 +307,7 @@ class _LoginState extends State<Login> {
                     height: 56,
                     child: OutlinedButton(
                       onPressed: () {
-                        Navigator.pushReplacement(
-                          context,
-                          MaterialPageRoute(builder: (context) => Register()),
-                        );
+                        // Acção de registo
                       },
                       style: OutlinedButton.styleFrom(
                         side: BorderSide(color: Colors.grey[300]!),

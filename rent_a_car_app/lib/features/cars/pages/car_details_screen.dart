@@ -211,10 +211,20 @@ class _ReservationDialogState extends State<_ReservationDialog> {
 
   Future<void> _pickDate({required bool isStart}) async {
     final now = DateTime.now();
+    if (!isStart && _startDate == null) {
+      // Tentou escolher data de fim antes da data de início
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Por favor, selecione a data de início primeiro.'),
+          backgroundColor: Colors.orange,
+        ),
+      );
+      return;
+    }
     final initialDate = isStart
         ? (_startDate ?? now)
-        : (_endDate ?? now.add(const Duration(days: 1)));
-    final firstDate = isStart ? now : (_startDate ?? now);
+        : (_endDate ?? _startDate!.add(const Duration(days: 1)));
+    final firstDate = isStart ? now : _startDate!.add(const Duration(days: 1));
     final picked = await showDatePicker(
       context: context,
       initialDate: initialDate,
@@ -225,7 +235,8 @@ class _ReservationDialogState extends State<_ReservationDialog> {
       setState(() {
         if (isStart) {
           _startDate = picked;
-          if (_endDate != null && _endDate!.isBefore(_startDate!)) {
+          // Limpa a data de fim se ela for inválida
+          if (_endDate != null && _endDate!.isBefore(_startDate!.add(const Duration(days: 1)))) {
             _endDate = null;
           }
         } else {
