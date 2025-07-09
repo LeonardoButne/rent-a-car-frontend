@@ -1,239 +1,169 @@
 import 'package:flutter/material.dart';
 import 'package:rent_a_car_app/core/services/owner_service.dart';
 import 'package:rent_a_car_app/core/models/owner.dart';
-import 'package:rent_a_car_app/core/utils/base_url.dart';
-import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:rent_a_car_app/features/cars/widgets/empty_owner_reservation_state.dart';
+import 'package:rent_a_car_app/features/cars/widgets/error_reservations_state.dart';
+import 'package:rent_a_car_app/features/cars/widgets/owner_reservation_list_item.dart';
+import 'package:rent_a_car_app/features/cars/widgets/owner_reservations_header.dart';
 
 class OwnerReservationsScreen extends StatefulWidget {
+  const OwnerReservationsScreen({super.key});
+
   @override
-  _OwnerReservationsScreenState createState() => _OwnerReservationsScreenState();
+  State<OwnerReservationsScreen> createState() =>
+      _OwnerReservationsScreenState();
 }
 
 class _OwnerReservationsScreenState extends State<OwnerReservationsScreen> {
-  late Future<List<OwnerReservation>> _reservationsFuture;
+  late Future<List<OwnerReservation>> _futureReservations;
   bool _isLoadingAction = false;
 
   @override
   void initState() {
     super.initState();
-    _reservationsFuture = OwnerService.getOwnerReservations();
+    _futureReservations = OwnerService.getOwnerReservations();
+  }
+
+  Future<void> _refresh() async {
+    setState(() {
+      _futureReservations = OwnerService.getOwnerReservations();
+    });
+  }
+
+  void _navigateToDetails(String reservationId) async {
+    // final result = await Navigator.push(
+    //   context,
+    //   MaterialPageRoute(
+    //     builder: (context) =>
+    //         OwnerReservationDetailsScreen(reservationId: reservationId),
+    //   ),
+    // );
+    // if (result == true) {
+    //   _refresh();
+    // }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text('Reservas Recebidas'),
-        backgroundColor: Colors.black,
-      ),
-      body: FutureBuilder<List<OwnerReservation>>(
-        future: _reservationsFuture,
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return Center(child: CircularProgressIndicator());
-          } else if (snapshot.hasError) {
-            return Center(child: Text('Erro ao carregar reservas'));
-          } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
-            return Center(child: Text('Nenhuma reserva recebida.'));
-          }
-          final reservations = snapshot.data!;
-          return ListView.separated(
-            padding: EdgeInsets.all(16),
-            itemCount: reservations.length,
-            separatorBuilder: (_, __) => SizedBox(height: 16),
-            itemBuilder: (context, index) {
-              final r = reservations[index];
-              final car = r.car;
-              final client = r.client;
-              return Card(
-                elevation: 2,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                child: Padding(
-                  padding: const EdgeInsets.all(16.0),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          car.images.isNotEmpty
-                              ? ClipRRect(
-                                  borderRadius: BorderRadius.circular(8),
-                                  child: Image.network(
-                                    fixImageUrl(car.images.first.url),
-                                    width: 60,
-                                    height: 60,
-                                    fit: BoxFit.cover,
-                                  ),
-                                )
-                              : Container(
-                                  width: 60,
-                                  height: 60,
-                                  decoration: BoxDecoration(
-                                    color: Colors.grey[300],
-                                    borderRadius: BorderRadius.circular(8),
-                                  ),
-                                  child: Icon(Icons.directions_car, color: Colors.grey[600]),
-                                ),
-                          SizedBox(width: 16),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text('${car.marca} ${car.modelo}', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-                                SizedBox(height: 4),
-                                Text('Cliente: ${client.name}', style: TextStyle(fontSize: 14)),
-                                Text('Email: ${client.email}', style: TextStyle(fontSize: 13, color: Colors.grey[600])),
-                              ],
-                            ),
-                          ),
-                          Container(
-                            padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                            decoration: BoxDecoration(
-                              color: _statusColor(r.status),
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: Text(
-                              r.status,
-                              style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
-                            ),
-                          ),
-                        ],
-                      ),
-                      SizedBox(height: 12),
-                      Row(
-                        children: [
-                          Icon(Icons.date_range, size: 18, color: Colors.grey[700]),
-                          SizedBox(width: 6),
-                          Text('De: ${_formatDate(r.startDate)}  Até: ${_formatDate(r.endDate)}'),
-                        ],
-                      ),
-                      SizedBox(height: 8),
-                      Row(
-                        children: [
-                          Icon(Icons.attach_money, size: 18, color: Colors.green[700]),
-                          SizedBox(width: 6),
-                          Text('Valor: ${r.price.toStringAsFixed(2)}'),
-                        ],
-                      ),
-                      if (r.notes != null && r.notes!.isNotEmpty) ...[
-                        SizedBox(height: 8),
-                        Text('Observação: ${r.notes!}', style: TextStyle(color: Colors.grey[700])),
-                      ],
-                      if (r.status.toLowerCase() == 'pending') ...[
-                        SizedBox(height: 12),
-                        Row(
-                          children: [
-                            Expanded(
-                              child: ElevatedButton.icon(
-                                icon: Icon(Icons.check, color: Colors.white),
-                                label: Text('Aprovar'),
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: Colors.green[700],
-                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                                ),
-                                onPressed: _isLoadingAction ? null : () async {
-                                  setState(() { _isLoadingAction = true; });
+      backgroundColor: Colors.grey[50],
+      body: SafeArea(
+        child: Column(
+          children: [
+            OwnerReservationsHeader(onBack: () => Navigator.pop(context)),
+            Expanded(
+              child: RefreshIndicator(
+                onRefresh: _refresh,
+                child: FutureBuilder<List<OwnerReservation>>(
+                  future: _futureReservations,
+                  builder: (context, snapshot) {
+                    if (snapshot.connectionState == ConnectionState.waiting) {
+                      return const Center(
+                        child: CircularProgressIndicator(color: Colors.orange),
+                      );
+                    }
+
+                    if (snapshot.hasError) {
+                      return ErrorReservationsState(
+                        error: snapshot.error.toString(),
+                        onRetry: _refresh,
+                      );
+                    }
+
+                    final reservations = snapshot.data ?? [];
+
+                    if (reservations.isEmpty) {
+                      return const EmptyOwnerReservationState();
+                    }
+
+                    return ListView.separated(
+                      padding: const EdgeInsets.all(20),
+                      itemCount: reservations.length,
+                      separatorBuilder: (_, __) => const SizedBox(height: 16),
+                      itemBuilder: (context, index) {
+                        final reservation = reservations[index];
+                        return OwnerReservationListItem(
+                          reservation: reservation,
+                          onTap: () => _navigateToDetails(reservation.id),
+                          onApprove:
+                              reservation.status.toLowerCase() == 'pending'
+                              ? () async {
+                                  setState(() {
+                                    _isLoadingAction = true;
+                                  });
                                   try {
-                                    await OwnerService.approveReservation(r.id);
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      SnackBar(content: Text('Reserva aprovada com sucesso!'), backgroundColor: Colors.green),
+                                    await OwnerService.approveReservation(
+                                      reservation.id,
                                     );
-                                    setState(() {
-                                      _reservationsFuture = OwnerService.getOwnerReservations();
-                                    });
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      const SnackBar(
+                                        content: Text(
+                                          'Reserva aprovada com sucesso!',
+                                        ),
+                                        backgroundColor: Colors.green,
+                                      ),
+                                    );
+                                    _refresh();
                                   } catch (e) {
                                     ScaffoldMessenger.of(context).showSnackBar(
-                                      SnackBar(content: Text('Erro ao aprovar reserva: $e'), backgroundColor: Colors.red),
+                                      SnackBar(
+                                        content: Text(
+                                          'Erro ao aprovar reserva: $e',
+                                        ),
+                                        backgroundColor: Colors.red,
+                                      ),
                                     );
                                   } finally {
-                                    setState(() { _isLoadingAction = false; });
-                                  }
-                                },
-                              ),
-                            ),
-                            SizedBox(width: 12),
-                            Expanded(
-                              child: ElevatedButton.icon(
-                                icon: Icon(Icons.close, color: Colors.white),
-                                label: Text('Rejeitar'),
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: Colors.red[700],
-                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                                ),
-                                onPressed: _isLoadingAction ? null : () async {
-                                  setState(() { _isLoadingAction = true; });
-                                  try {
-                                    await OwnerService.rejectReservation(r.id);
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      SnackBar(content: Text('Reserva rejeitada.'), backgroundColor: Colors.red),
-                                    );
                                     setState(() {
-                                      _reservationsFuture = OwnerService.getOwnerReservations();
+                                      _isLoadingAction = false;
                                     });
+                                  }
+                                }
+                              : null,
+                          onReject:
+                              reservation.status.toLowerCase() == 'pending'
+                              ? () async {
+                                  setState(() {
+                                    _isLoadingAction = true;
+                                  });
+                                  try {
+                                    await OwnerService.rejectReservation(
+                                      reservation.id,
+                                    );
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      const SnackBar(
+                                        content: Text('Reserva rejeitada.'),
+                                        backgroundColor: Colors.orange,
+                                      ),
+                                    );
+                                    _refresh();
                                   } catch (e) {
                                     ScaffoldMessenger.of(context).showSnackBar(
-                                      SnackBar(content: Text('Erro ao rejeitar reserva: $e'), backgroundColor: Colors.red),
+                                      SnackBar(
+                                        content: Text(
+                                          'Erro ao rejeitar reserva: $e',
+                                        ),
+                                        backgroundColor: Colors.red,
+                                      ),
                                     );
                                   } finally {
-                                    setState(() { _isLoadingAction = false; });
+                                    setState(() {
+                                      _isLoadingAction = false;
+                                    });
                                   }
-                                },
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ],
-                  ),
+                                }
+                              : null,
+                          isLoadingAction: _isLoadingAction,
+                        );
+                      },
+                    );
+                  },
                 ),
-              );
-            },
-          );
-        },
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
-
-  String _formatDate(DateTime date) {
-    return '${date.day.toString().padLeft(2, '0')}/${date.month.toString().padLeft(2, '0')}/${date.year}';
-  }
-
-  Color _statusColor(String status) {
-    switch (status.toLowerCase()) {
-      case 'approved':
-        return Colors.green;
-      case 'rejected':
-        return Colors.red;
-      case 'pending':
-      default:
-        return Colors.orange;
-    }
-  }
-
-  void _updateStatus(String reservationId, String status) async {
-    setState(() { _isLoadingAction = true; });
-    try {
-      await OwnerService.updateReservationStatus(reservationId, status);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Reserva $status com sucesso!'), backgroundColor: Colors.black),
-      );
-      setState(() {
-        _reservationsFuture = OwnerService.getOwnerReservations();
-      });
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Erro ao atualizar reserva: $e'), backgroundColor: Colors.red),
-      );
-    } finally {
-      setState(() { _isLoadingAction = false; });
-    }
-  }
-
-  String fixImageUrl(String url) {
-    if (url.startsWith('http')) {
-      return url.replaceFirst('localhost', kIsWeb ? 'localhost' : '10.0.2.2');
-    } else {
-      return '$baseUrl/$url';
-    }
-  }
-} 
+}
