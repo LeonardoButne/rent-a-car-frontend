@@ -112,35 +112,35 @@ class _OwnerReservationsScreenState extends State<OwnerReservationsScreen> {
                                     ),
                                   );
                                   if (confirm == true) {
+                                  setState(() {
+                                    _isLoadingAction = true;
+                                  });
+                                  try {
+                                    await OwnerService.approveReservation(
+                                      reservation.id,
+                                    );
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      const SnackBar(
+                                        content: Text(
+                                          'Reserva aprovada com sucesso!',
+                                        ),
+                                        backgroundColor: Colors.green,
+                                      ),
+                                    );
+                                    _refresh();
+                                  } catch (e) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(
+                                        content: Text(
+                                          'Erro ao aprovar reserva: $e',
+                                        ),
+                                        backgroundColor: Colors.red,
+                                      ),
+                                    );
+                                  } finally {
                                     setState(() {
-                                      _isLoadingAction = true;
+                                      _isLoadingAction = false;
                                     });
-                                    try {
-                                      await OwnerService.approveReservation(
-                                        reservation.id,
-                                      );
-                                      ScaffoldMessenger.of(context).showSnackBar(
-                                        const SnackBar(
-                                          content: Text(
-                                            'Reserva aprovada com sucesso!',
-                                          ),
-                                          backgroundColor: Colors.green,
-                                        ),
-                                      );
-                                      _refresh();
-                                    } catch (e) {
-                                      ScaffoldMessenger.of(context).showSnackBar(
-                                        SnackBar(
-                                          content: Text(
-                                            'Erro ao aprovar reserva: $e',
-                                          ),
-                                          backgroundColor: Colors.red,
-                                        ),
-                                      );
-                                    } finally {
-                                      setState(() {
-                                        _isLoadingAction = false;
-                                      });
                                     }
                                   }
                                 }
@@ -165,33 +165,33 @@ class _OwnerReservationsScreenState extends State<OwnerReservationsScreen> {
                                     ),
                                   );
                                   if (confirm == true) {
+                                  setState(() {
+                                    _isLoadingAction = true;
+                                  });
+                                  try {
+                                    await OwnerService.rejectReservation(
+                                      reservation.id,
+                                    );
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      const SnackBar(
+                                        content: Text('Reserva rejeitada.'),
+                                        backgroundColor: Colors.orange,
+                                      ),
+                                    );
+                                    _refresh();
+                                  } catch (e) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(
+                                        content: Text(
+                                          'Erro ao rejeitar reserva: $e',
+                                        ),
+                                        backgroundColor: Colors.red,
+                                      ),
+                                    );
+                                  } finally {
                                     setState(() {
-                                      _isLoadingAction = true;
+                                      _isLoadingAction = false;
                                     });
-                                    try {
-                                      await OwnerService.rejectReservation(
-                                        reservation.id,
-                                      );
-                                      ScaffoldMessenger.of(context).showSnackBar(
-                                        const SnackBar(
-                                          content: Text('Reserva rejeitada.'),
-                                          backgroundColor: Colors.orange,
-                                        ),
-                                      );
-                                      _refresh();
-                                    } catch (e) {
-                                      ScaffoldMessenger.of(context).showSnackBar(
-                                        SnackBar(
-                                          content: Text(
-                                            'Erro ao rejeitar reserva: $e',
-                                          ),
-                                          backgroundColor: Colors.red,
-                                        ),
-                                      );
-                                    } finally {
-                                      setState(() {
-                                        _isLoadingAction = false;
-                                      });
                                     }
                                   }
                                 }

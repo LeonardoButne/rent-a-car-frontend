@@ -5,6 +5,11 @@ import 'package:rent_a_car_app/features/reservations/widgets/history/history_car
 import 'package:rent_a_car_app/features/reservations/widgets/history/loading_skeleton.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:jwt_decoder/jwt_decoder.dart';
+import 'package:rent_a_car_app/features/notifications/models/notification_item.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
+import 'dart:convert';
+import 'package:rent_a_car_app/core/utils/base_url.dart';
 
 class HistoryScreen extends StatefulWidget {
   const HistoryScreen({super.key});
@@ -374,22 +379,28 @@ class _HistoryScreenState extends State<HistoryScreen> {
 
   /// Constrói bottom navigation
   Widget _buildBottomNavigation() {
-    return Container(
-      height: 80,
-      decoration: const BoxDecoration(
-        color: Colors.black,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(25)),
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-        children: [
-          _buildNavItem(Icons.home, false),
-          _buildNavItem(Icons.search, false),
-          _buildNavItem(Icons.chat_bubble_outline, false),
-          _buildNavItem(Icons.notifications_outlined, false),
-          _buildNavItem(Icons.person_outline, false),
-        ],
-      ),
+    return FutureBuilder<int>(
+      future: _fetchUnreadNotificationsCount(),
+      builder: (context, snapshot) {
+        final unreadCount = snapshot.data ?? 0;
+        return Container(
+          height: 80,
+          decoration: const BoxDecoration(
+            color: Colors.black,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(25)),
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+            children: [
+              _buildNavItem(Icons.home, false),
+              _buildNavItem(Icons.search, false),
+              _buildNavItem(Icons.chat_bubble_outline, false),
+              _buildNotificationNavItem(unreadCount),
+              _buildNavItem(Icons.person_outline, false),
+            ],
+          ),
+        );
+      },
     );
   }
 
@@ -398,6 +409,63 @@ class _HistoryScreenState extends State<HistoryScreen> {
       padding: const EdgeInsets.all(12),
       child: Icon(icon, color: isActive ? Colors.white : Colors.grey, size: 24),
     );
+  }
+
+  Widget _buildNotificationNavItem(int unreadCount) {
+    return Stack(
+      children: [
+        Container(
+          padding: const EdgeInsets.all(12),
+          child: Icon(Icons.notifications_outlined, color: Colors.white, size: 24),
+        ),
+        if (unreadCount > 0)
+          Positioned(
+            right: 8,
+            top: 8,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+              decoration: BoxDecoration(
+                color: Colors.red,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Text(
+                '$unreadCount',
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 10,
+                ),
+              ),
+            ),
+          ),
+      ],
+    );
+  }
+
+  Future<int> _fetchUnreadNotificationsCount() async {
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString('auth_token');
+    final userId = _getUserIdFromToken(token);
+    final response = await http.get(
+      Uri.parse('$baseUrl/notifications?userId=$userId'),
+      headers: {'Authorization': 'Bearer $token'},
+    );
+    if (response.statusCode == 200) {
+      final List data = json.decode(response.body);
+      final notifications = data.map((e) => NotificationItem.fromJson(e)).toList();
+      return notifications.where((n) => !n.isRead).length;
+    } else {
+      return 0;
+    }
+  }
+
+  String? _getUserIdFromToken(String? token) {
+    if (token == null) return null;
+    final parts = token.split('.');
+    if (parts.length != 3) return null;
+    final payload = utf8.decode(base64Url.decode(base64Url.normalize(parts[1])));
+    final Map<String, dynamic> jsonPayload = json.decode(payload);
+    return jsonPayload['sub'];
   }
 
   /// Mostra opções de ordenação

@@ -1,9 +1,69 @@
 import 'package:flutter/material.dart';
+import 'package:rent_a_car_app/features/notifications/models/notification_item.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:rent_a_car_app/core/utils/base_url.dart';
 
-/// Tela de notificações (vazia) - Estado inicial sem notificações
-/// Design clean com empty state informativo em português
-class NotificationsScreen extends StatelessWidget {
+class NotificationsScreen extends StatefulWidget {
   const NotificationsScreen({super.key});
+
+  @override
+  State<NotificationsScreen> createState() => _NotificationsScreenState();
+}
+
+class _NotificationsScreenState extends State<NotificationsScreen> {
+  late Future<List<NotificationItem>> _futureNotifications;
+
+  @override
+  void initState() {
+    super.initState();
+    _futureNotifications = _fetchNotifications();
+  }
+
+  Future<List<NotificationItem>> _fetchNotifications() async {
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString('auth_token');
+    final userId = _getUserIdFromToken(token);
+    final response = await http.get(
+      Uri.parse('$baseUrl/notifications?userId=$userId'),
+      headers: {'Authorization': 'Bearer $token'},
+    );
+    if (response.statusCode == 200) {
+      final List data = json.decode(response.body);
+      return data.map((e) => NotificationItem.fromJson(e)).toList();
+    } else {
+      throw Exception('Erro ao buscar notificações');
+    }
+  }
+
+  String? _getUserIdFromToken(String? token) {
+    if (token == null) return null;
+    // Decodifique o JWT para pegar o sub/userId
+    final parts = token.split('.');
+    if (parts.length != 3) return null;
+    final payload = utf8.decode(base64Url.decode(base64Url.normalize(parts[1])));
+    final Map<String, dynamic> jsonPayload = json.decode(payload);
+    return jsonPayload['sub'];
+  }
+
+  Future<void> _markAsRead(String notificationId, String token) async {
+    await http.patch(
+      Uri.parse('$baseUrl/notifications/$notificationId/read'),
+      headers: {'Authorization': 'Bearer $token'},
+    );
+  }
+
+  void _onNotificationTap(NotificationItem notification) async {
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString('auth_token');
+    await _markAsRead(notification.id, token!);
+    if (notification.type == 'reservation_request') {
+      Navigator.pushNamed(context, '/owner-reservations', arguments: notification.reservationId);
+    } else {
+      Navigator.pushNamed(context, '/my-reservations', arguments: notification.reservationId);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -12,16 +72,50 @@ class NotificationsScreen extends StatelessWidget {
       body: SafeArea(
         child: Column(
           children: [
-            _buildHeader(context),
-            Expanded(child: _buildEmptyState()),
+            FutureBuilder<List<NotificationItem>>(
+              future: _futureNotifications,
+              builder: (context, snapshot) {
+                final notifications = snapshot.data ?? [];
+                final unreadCount = notifications.where((n) => !n.isRead).length;
+                return _buildHeader(context, unreadCount);
+              },
+            ),
+            Expanded(
+              child: FutureBuilder<List<NotificationItem>>(
+                future: _futureNotifications,
+                builder: (context, snapshot) {
+                  if (snapshot.connectionState == ConnectionState.waiting) {
+                    return const Center(child: CircularProgressIndicator());
+                  }
+                  if (snapshot.hasError) {
+                    return Center(child: Text('Erro ao carregar notificações'));
+                  }
+                  final notifications = snapshot.data ?? [];
+                  if (notifications.isEmpty) {
+                    return _buildEmptyState();
+                  }
+                  return ListView.builder(
+                    itemCount: notifications.length,
+                    itemBuilder: (context, index) {
+                      final n = notifications[index];
+                      return ListTile(
+                        title: Text(n.title),
+                        subtitle: Text(n.message),
+                        trailing: n.isRead ? null : Icon(Icons.fiber_new, color: Colors.red),
+                        onTap: () => _onNotificationTap(n),
+                      );
+                    },
+                  );
+                },
+              ),
+            ),
           ],
         ),
       ),
     );
   }
 
-  /// Constrói header simples
-  Widget _buildHeader(BuildContext context) {
+  Widget _buildHeader(BuildContext context, int unreadCount) {
     return Container(
       padding: const EdgeInsets.all(20),
       child: Row(
@@ -44,6 +138,23 @@ class NotificationsScreen extends StatelessWidget {
               ),
             ),
           ),
+          if (unreadCount > 0)
+            Container(
+              margin: const EdgeInsets.only(left: 8),
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              decoration: BoxDecoration(
+                color: Colors.red,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Text(
+                '$unreadCount',
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 12,
+                ),
+              ),
+            ),
           Container(
             padding: const EdgeInsets.all(8),
             child: const Icon(Icons.more_horiz, size: 20),
@@ -53,7 +164,6 @@ class NotificationsScreen extends StatelessWidget {
     );
   }
 
-  /// Constrói estado vazio das notificações
   Widget _buildEmptyState() {
     return Center(
       child: Column(
@@ -117,35 +227,6 @@ class NotificationsScreen extends StatelessWidget {
           ),
         ],
       ),
-    );
-  }
-
-  /// Constrói bottom navigation
-  Widget _buildBottomNavigation() {
-    return Container(
-      height: 80,
-      decoration: const BoxDecoration(
-        color: Colors.black,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(25)),
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-        children: [
-          _buildNavItem(Icons.home, false),
-          _buildNavItem(Icons.search, false),
-          _buildNavItem(Icons.chat_bubble_outline, false),
-          _buildNavItem(Icons.notifications, true), // Ativo
-          _buildNavItem(Icons.person_outline, false),
-        ],
-      ),
-    );
-  }
-
-  /// Constrói item do navigation
-  Widget _buildNavItem(IconData icon, bool isActive) {
-    return Container(
-      padding: const EdgeInsets.all(12),
-      child: Icon(icon, color: isActive ? Colors.white : Colors.grey, size: 24),
     );
   }
 }
