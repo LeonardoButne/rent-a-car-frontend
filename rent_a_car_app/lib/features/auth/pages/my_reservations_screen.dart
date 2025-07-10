@@ -70,16 +70,24 @@ class _MyReservationsScreenState extends State<MyReservationsScreen> {
 
                     final reservations = snapshot.data ?? [];
 
-                    if (reservations.isEmpty) {
+                    // Filtrar apenas as reservas solicitadas
+                    final requestedReservations = reservations
+                        .where((r) => r.status == 'pending' || r.status == 'approved' || r.status == 'active')
+                        .toList();
+
+                    // Ordenar da mais recente para a mais antiga
+                    requestedReservations.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+
+                    if (requestedReservations.isEmpty) {
                       return const EmptyReservationsState();
                     }
 
                     return ListView.separated(
                       padding: const EdgeInsets.all(20),
-                      itemCount: reservations.length,
+                      itemCount: requestedReservations.length,
                       separatorBuilder: (_, __) => const SizedBox(height: 16),
                       itemBuilder: (context, index) {
-                        final reservation = reservations[index];
+                        final reservation = requestedReservations[index];
                         return ReservationListItem(
                           reservation: reservation,
                           onTap: () => _navigateToDetails(reservation.id),
@@ -98,6 +106,7 @@ class _MyReservationsScreenState extends State<MyReservationsScreen> {
                                   }
                                 }
                               : null,
+                          onRefresh: _refresh,
                         );
                       },
                     );

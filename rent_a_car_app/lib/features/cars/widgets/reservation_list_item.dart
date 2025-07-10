@@ -9,12 +9,14 @@ class ReservationListItem extends StatelessWidget {
   final Reservation reservation;
   final VoidCallback onTap;
   final VoidCallback? onActivate;
+  final VoidCallback? onRefresh;
 
   const ReservationListItem({
     super.key,
     required this.reservation,
     required this.onTap,
     this.onActivate,
+    this.onRefresh,
   });
 
   @override
@@ -69,29 +71,72 @@ class ReservationListItem extends StatelessWidget {
             _buildDatesInfo(),
             if (reservation.status == 'approved' && onActivate != null) ...[
               const SizedBox(height: 12),
-              ElevatedButton.icon(
-                icon: const Icon(Icons.directions_car),
-                label: const Text('Retirar'),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.blue,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                ),
-                onPressed: () async {
-                  final confirmed = await showDialog<bool>(
-                    context: context,
-                    builder: (context) => AlertDialog(
-                      title: const Text('Confirmar retirada'),
-                      content: const Text('Tem certeza que deseja retirar o carro agora?'),
-                      actions: [
-                        TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancelar')),
-                        ElevatedButton(onPressed: () => Navigator.pop(context, true), child: const Text('Confirmar')),
-                      ],
+              Row(
+                children: [
+                  Expanded(
+                    child: ElevatedButton.icon(
+                      icon: const Icon(Icons.directions_car),
+                      label: const Text('Retirar'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.blue,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                      ),
+                      onPressed: () async {
+                        final confirmed = await showDialog<bool>(
+                          context: context,
+                          builder: (context) => AlertDialog(
+                            title: const Text('Confirmar retirada'),
+                            content: const Text('Tem certeza que deseja retirar o carro agora?'),
+                            actions: [
+                              TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancelar')),
+                              ElevatedButton(onPressed: () => Navigator.pop(context, true), child: const Text('Confirmar')),
+                            ],
+                          ),
+                        );
+                        if (confirmed == true) {
+                          onActivate!();
+                        }
+                      },
                     ),
-                  );
-                  if (confirmed == true) {
-                    onActivate!();
-                  }
-                },
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: ElevatedButton.icon(
+                      icon: const Icon(Icons.cancel),
+                      label: const Text('Desistir'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.red,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                      ),
+                      onPressed: () async {
+                        final confirm = await showDialog<bool>(
+                          context: context,
+                          builder: (context) => AlertDialog(
+                            title: const Text('Cancelar reserva'),
+                            content: const Text('Tem certeza que deseja cancelar esta reserva?'),
+                            actions: [
+                              TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Não')),
+                              TextButton(onPressed: () => Navigator.pop(context, true), child: const Text('Sim', style: TextStyle(color: Colors.red))),
+                            ],
+                          ),
+                        );
+                        if (confirm == true) {
+                          try {
+                            await ReservationService.cancelReservation(reservation.id);
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(content: Text('Reserva cancelada com sucesso!'), backgroundColor: Colors.red),
+                            );
+                            if (onRefresh != null) onRefresh!();
+                          } catch (e) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(content: Text('Erro ao cancelar reserva: $e'), backgroundColor: Colors.red),
+                            );
+                          }
+                        }
+                      },
+                    ),
+                  ),
+                ],
               ),
             ],
             if (reservation.status == 'active') ...[
@@ -104,17 +149,35 @@ class ReservationListItem extends StatelessWidget {
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                 ),
                 onPressed: () async {
-                  try {
-                    final finished = await ReservationService.finishReservation(reservation.id);
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Reserva finalizada com sucesso!'), backgroundColor: Colors.green),
-                    );
-                    // ignore: use_build_context_synchronously
-                    Navigator.of(context).pop(); // Fecha o dialog se estiver aberto
-                  } catch (e) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text('Erro ao finalizar reserva: $e'), backgroundColor: Colors.red),
-                    );
+                  final confirm = await showDialog<bool>(
+                    context: context,
+                    builder: (context) => AlertDialog(
+                      title: const Text('Finalizar reserva'),
+                      content: const Text('Tem certeza que deseja finalizar esta reserva?'),
+                      actions: [
+                        TextButton(
+                          onPressed: () => Navigator.pop(context, false),
+                          child: const Text('Cancelar'),
+                        ),
+                        TextButton(
+                          onPressed: () => Navigator.pop(context, true),
+                          child: const Text('Finalizar', style: TextStyle(color: Colors.green)),
+                        ),
+                      ],
+                    ),
+                  );
+                  if (confirm == true) {
+                    try {
+                      final finished = await ReservationService.finishReservation(reservation.id);
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('Reserva finalizada com sucesso!'), backgroundColor: Colors.green),
+                      );
+                      if (onRefresh != null) onRefresh!();
+                    } catch (e) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text('Erro ao finalizar reserva: $e'), backgroundColor: Colors.red),
+                      );
+                    }
                   }
                 },
               ),
