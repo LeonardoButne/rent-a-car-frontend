@@ -11,6 +11,7 @@ import '../../../core/models/car_model.dart';
 import '../../../core/services/car_service.dart';
 import '../../notifications/pages/notification_screen.dart';
 import 'package:rent_a_car_app/core/utils/base_url.dart';
+import 'package:rent_a_car_app/shared/widgets/app_bottom_navigation.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -415,7 +416,15 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
           ],
         ),
       ),
-      bottomNavigationBar: _buildBottomNavigationBar(),
+      bottomNavigationBar: AppBottomNavigation(
+        currentIndex: 0, // Home
+        onTap: (index) {
+          if (index == 0) Navigator.pushNamed(context, '/home');
+          if (index == 1) Navigator.pushNamed(context, '/my-reservations');
+          if (index == 2) Navigator.pushNamed(context, '/notifications');
+          if (index == 3) Navigator.pushNamed(context, '/profile');
+        },
+      ),
     );
   }
 

@@ -5,6 +5,10 @@ import 'package:rent_a_car_app/core/services/api_service.dart';
 
 import '../../models/brand.dart';
 import '../models/car_model.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
+import '../utils/base_url.dart';
 
 class CarService {
   static final ApiService _apiService = ApiService();
@@ -318,6 +322,21 @@ class CarService {
       sortedCars.sort((a, b) => a.ano.compareTo(b.ano));
     }
     return sortedCars;
+  }
+
+  static Future<List<ApiCar>> getMyCars() async {
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString('auth_token');
+    final response = await http.get(
+      Uri.parse('$baseUrl/owner/my-cars'),
+      headers: {'Authorization': 'Bearer $token'},
+    );
+    if (response.statusCode == 200) {
+      final List data = json.decode(response.body);
+      return data.map((e) => ApiCar.fromJson(e)).toList();
+    } else {
+      throw Exception('Erro ao buscar seus carros');
+    }
   }
 
   // Handle Dio errors

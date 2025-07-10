@@ -447,7 +447,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
     final token = prefs.getString('auth_token');
     final userId = _getUserIdFromToken(token);
     final response = await http.get(
-      Uri.parse('$baseUrl/notifications?userId=$userId'),
+      Uri.parse('$baseUrl/notification/notifications?userId=$userId'),
       headers: {'Authorization': 'Bearer $token'},
     );
     if (response.statusCode == 200) {
@@ -455,7 +455,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
       final notifications = data.map((e) => NotificationItem.fromJson(e)).toList();
       return notifications.where((n) => !n.isRead).length;
     } else {
-      return 0;
+      throw Exception('Erro ao buscar notificações');
     }
   }
 

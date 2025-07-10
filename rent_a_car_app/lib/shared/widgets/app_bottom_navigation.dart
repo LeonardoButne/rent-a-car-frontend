@@ -27,10 +27,9 @@ class AppBottomNavigation extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             children: [
               _buildNavItem(Icons.home, 0, unreadCount, context),
-              _buildNavItem(Icons.search, 1, unreadCount, context),
-              _buildNavItem(Icons.chat_bubble_outline, 2, unreadCount, context),
-              _buildNotificationNavItem(3, unreadCount, context),
-              _buildNavItem(Icons.person_outline, 4, unreadCount, context),
+              _buildNavItem(Icons.inbox, 1, unreadCount, context), // Reservas
+              _buildNotificationNavItem(2, unreadCount, context),
+              _buildNavItem(Icons.person_outline, 3, unreadCount, context),
             ],
           ),
         );
@@ -95,7 +94,7 @@ class AppBottomNavigation extends StatelessWidget {
     final token = prefs.getString('auth_token');
     final userId = _getUserIdFromToken(token);
     final response = await http.get(
-      Uri.parse('$baseUrl/notifications?userId=$userId'),
+      Uri.parse('$baseUrl/notification/notifications?userId=$userId'),
       headers: {'Authorization': 'Bearer $token'},
     );
     if (response.statusCode == 200) {
@@ -103,7 +102,7 @@ class AppBottomNavigation extends StatelessWidget {
       final notifications = data.map((e) => NotificationItem.fromJson(e)).toList();
       return notifications.where((n) => !n.isRead).length;
     } else {
-      return 0;
+      throw Exception('Erro ao buscar notificações');
     }
   }
 

@@ -7,13 +7,13 @@ import 'package:rent_a_car_app/features/auth/pages/login.dart';
 
 class OTPVerificationScreen extends StatefulWidget {
   final String email;
-  final String deviceId;
+  final String? deviceId;
   final bool isLoginOtp;
 
   const OTPVerificationScreen({
     Key? key,
     required this.email,
-    required this.deviceId,
+    this.deviceId,
     this.isLoginOtp = false,
   }) : super(key: key);
 
@@ -59,7 +59,7 @@ class _OTPVerificationScreenState extends State<OTPVerificationScreen> {
       final response = await api.post(endpoint, {
         'email': widget.email,
         'otp': pin,
-        'deviceId': widget.deviceId,
+        if (widget.deviceId != null) 'deviceId': widget.deviceId,
       });
       print('Resposta OTP: [32m${response.data}[0m');
       print('Status: ${response.statusCode}');

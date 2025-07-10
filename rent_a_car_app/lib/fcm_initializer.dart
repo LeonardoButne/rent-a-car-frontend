@@ -1,0 +1,1 @@
+export 'fcm_initializer_mobile.dart' if (dart.library.html) 'fcm_initializer_web.dart'; 

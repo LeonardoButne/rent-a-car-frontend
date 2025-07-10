@@ -4,14 +4,21 @@ import 'package:rent_a_car_app/features/cars/pages/home_screen.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:firebase_core/firebase_core.dart';
-import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
+import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:rent_a_car_app/features/notifications/pages/notification_screen.dart';
+import 'package:rent_a_car_app/features/auth/pages/my_reservations_screen.dart';
+import 'package:rent_a_car_app/features/auth/pages/profile_screen.dart';
+import 'package:rent_a_car_app/features/owner/pages/owner_reservations_screen.dart';
+import 'firebase_options.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await dotenv.load(fileName: ".env");
-  await Firebase.initializeApp();
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
   runApp(const MyApp());
 }
 
@@ -29,6 +36,10 @@ class MyApp extends StatelessWidget {
       routes: {
         '/login': (context) => Login(),
         '/home': (context) => HomeScreen(),
+        '/notifications': (context) => NotificationsScreen(),
+        '/my-reservations': (context) => MyReservationsScreen(),
+        '/profile': (context) => ProfileScreen(),
+        '/owner-reservations': (context) => OwnerReservationsScreen(),
         // Adicione a rota de notificações se necessário
       },
       navigatorKey: navigatorKey, // Para navegação via push
@@ -47,51 +58,10 @@ class _SplashScreenState extends State<SplashScreen> {
   @override
   void initState() {
     super.initState();
-    _initFCM();
     _checkAuthStatus();
   }
 
-  Future<void> _initFCM() async {
-    FirebaseMessaging messaging = FirebaseMessaging.instance;
-    await messaging.requestPermission();
-    String? token = await messaging.getToken();
-    if (token != null) {
-      // Envie o token para o backend
-      final prefs = await SharedPreferences.getInstance();
-      final authToken = prefs.getString('auth_token');
-      if (authToken != null && authToken.isNotEmpty) {
-        await http.post(
-          Uri.parse('https://SEU_BACKEND/device-token'),
-          headers: {
-            'Authorization': 'Bearer $authToken',
-            'Content-Type': 'application/json',
-          },
-          body: jsonEncode({'deviceToken': token}),
-        );
-      }
-    }
-    // Handler para push notification em foreground
-    FirebaseMessaging.onMessage.listen((RemoteMessage message) {
-      if (message.notification != null) {
-        final snackBar = SnackBar(
-          content: Text(message.notification!.title ?? 'Nova notificação'),
-          duration: Duration(seconds: 2),
-        );
-        ScaffoldMessenger.of(context).showSnackBar(snackBar);
-      }
-    });
-    // Handler para push notification em background/terminated
-    FirebaseMessaging.onMessageOpenedApp.listen((RemoteMessage message) {
-      final data = message.data;
-      final reservationId = data['reservationId'];
-      final type = data['type'];
-      if (type == 'reservation_request') {
-        navigatorKey.currentState?.pushNamed('/owner-reservations', arguments: reservationId);
-      } else {
-        navigatorKey.currentState?.pushNamed('/my-reservations', arguments: reservationId);
-      }
-    });
-  }
+  // Removido _initFCM e qualquer referência a notificações
 
   Future<void> _checkAuthStatus() async {
     // Aguarda um pouco para mostrar a tela de splash

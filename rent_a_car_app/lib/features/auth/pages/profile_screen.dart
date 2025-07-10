@@ -10,6 +10,7 @@ import 'package:rent_a_car_app/features/owner/pages/owner_reservations_screen.da
 import 'my_reservations_screen.dart';
 import '../../notifications/pages/notification_screen.dart';
 import '../../../features/reservations/pages/history_screen.dart';
+import '../../cars/pages/my_cars_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -403,7 +404,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   void _navigateToMyCars() {
-    _showComingSoon('Meus Carros');
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => MyCarsScreen(),
+      ),
+    );
   }
 
   void _navigateToSettings() {

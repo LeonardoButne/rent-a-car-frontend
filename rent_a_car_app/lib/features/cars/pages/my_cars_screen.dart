@@ -34,15 +34,7 @@ class _MyCarsScreenState extends State<MyCarsScreen> {
     });
 
     try {
-      // Pega o ID do usuário logado
-      await _getCurrentUserId();
-
-      // Carrega todos os carros (retorna e atualiza cache)
-      final allCars = await CarService.getAllCars();
-
-      // Filtra pelos carros do proprietário logado
-      final myCars = CarService.getCarsByOwner(allCars, _currentUserId);
-
+      final myCars = await CarService.getMyCars();
       setState(() {
         _myCars = myCars;
         _isLoading = false;

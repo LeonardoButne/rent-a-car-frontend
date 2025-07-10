@@ -26,7 +26,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     final token = prefs.getString('auth_token');
     final userId = _getUserIdFromToken(token);
     final response = await http.get(
-      Uri.parse('$baseUrl/notifications?userId=$userId'),
+      Uri.parse('$baseUrl/notification/notifications?userId=$userId'),
       headers: {'Authorization': 'Bearer $token'},
     );
     if (response.statusCode == 200) {
@@ -49,7 +49,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
 
   Future<void> _markAsRead(String notificationId, String token) async {
     await http.patch(
-      Uri.parse('$baseUrl/notifications/$notificationId/read'),
+      Uri.parse('$baseUrl/notification/notifications/$notificationId/read'),
       headers: {'Authorization': 'Bearer $token'},
     );
   }

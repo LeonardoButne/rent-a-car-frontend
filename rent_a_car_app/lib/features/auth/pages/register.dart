@@ -3,6 +3,7 @@ import 'package:rent_a_car_app/features/auth/pages/otp_verification_screen.dart'
 import 'package:rent_a_car_app/core/services/api_service.dart';
 import 'package:rent_a_car_app/core/utils/device_id.dart';
 import 'package:rent_a_car_app/features/auth/pages/login.dart';
+import '../../../fcm_initializer.dart';
 
 class Register extends StatefulWidget {
   const Register({super.key});
@@ -40,7 +41,6 @@ class _RegisterState extends State<Register> {
     });
     try {
       final api = ApiService();
-      final deviceId = await getDeviceId();
       final typeAccount = _accountTypeMap[_accountType]!;
       final endpoint = typeAccount == 'owner' ? '/owner/signup' : '/client/signup';
       final payload = typeAccount == 'owner'
@@ -54,7 +54,6 @@ class _RegisterState extends State<Register> {
               'address': _enderecoController.text.trim(),
               'package': _pacoteController.text.trim(),
               'typeAccount': typeAccount,
-              'deviceId': deviceId,
             }
           : {
               'name': _nomeController.text.trim(),
@@ -64,16 +63,16 @@ class _RegisterState extends State<Register> {
               'passwordConfirm': _confirmPasswordController.text.trim(),
               'telephone': _telefoneController.text.trim(),
               'typeAccount': typeAccount,
-              'deviceId': deviceId,
             };
       final response = await api.post(endpoint, payload);
       if (response.statusCode == 200 || response.statusCode == 201) {
+        final fcmToken = await getFcmToken();
         Navigator.push(
           context,
           MaterialPageRoute(
             builder: (context) => OTPVerificationScreen(
               email: _emailController.text.trim(),
-              deviceId: deviceId,
+              deviceId: fcmToken,
               isLoginOtp: false,
             ),
           ),

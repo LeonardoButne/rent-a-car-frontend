@@ -6,6 +6,7 @@ import 'package:rent_a_car_app/features/cars/pages/home_screen.dart';
 import 'package:rent_a_car_app/core/utils/device_id.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:dio/dio.dart';
+import '../../../fcm_initializer.dart';
 
 class Login extends StatefulWidget {
   const Login({super.key});
@@ -28,13 +29,13 @@ class _LoginState extends State<Login> {
       _errorMessage = null;
     });
 
-    final deviceId = await getDeviceId();
+    final fcmToken = await getFcmToken();
     try {
       final api = ApiService();
       final response = await api.post('/auth/login', {
         'email': _emailController.text.trim(),
         'password': _passwordController.text.trim(),
-        'deviceId': deviceId,
+        'deviceId': fcmToken,
       });
 
       final data = response.data;
@@ -61,7 +62,7 @@ class _LoginState extends State<Login> {
           MaterialPageRoute(
             builder: (_) => OTPVerificationScreen(
               email: _emailController.text.trim(),
-              deviceId: deviceId,
+              deviceId: fcmToken,
               isLoginOtp: true,
             ),
           ),
