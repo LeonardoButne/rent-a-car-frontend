@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:rent_a_car_app/features/notifications/models/notification_item.dart';
-import 'package:http/http.dart' as http;
-import 'dart:convert';
-import 'package:shared_preferences/shared_preferences.dart';
-import 'package:rent_a_car_app/core/utils/base_url.dart';
+import 'package:rent_a_car_app/features/notifications/services/notification_service.dart';
+import 'package:rent_a_car_app/features/notifications/widgets/notification_state.dart';
+import 'package:rent_a_car_app/features/notifications/widgets/notification_widgets.dart';
+import 'package:rent_a_car_app/features/notifications/helpers/notification_helpers.dart';
 
 class NotificationsScreen extends StatefulWidget {
   const NotificationsScreen({super.key});
@@ -12,221 +12,229 @@ class NotificationsScreen extends StatefulWidget {
   State<NotificationsScreen> createState() => _NotificationsScreenState();
 }
 
-class _NotificationsScreenState extends State<NotificationsScreen> {
+class _NotificationsScreenState extends State<NotificationsScreen>
+    with TickerProviderStateMixin {
   late Future<List<NotificationItem>> _futureNotifications;
+  List<NotificationItem> _selectedNotifications = [];
+  bool _isSelectionMode = false;
+  late AnimationController _animationController;
+  late Animation<double> _fadeAnimation;
 
   @override
   void initState() {
     super.initState();
-    _futureNotifications = _fetchNotifications();
+    _loadNotifications();
+    _initializeAnimations();
   }
 
-  Future<List<NotificationItem>> _fetchNotifications() async {
-    final prefs = await SharedPreferences.getInstance();
-    final token = prefs.getString('auth_token');
-    final userId = _getUserIdFromToken(token);
-    final response = await http.get(
-      Uri.parse('$baseUrl/notification/notifications?userId=$userId'),
-      headers: {'Authorization': 'Bearer $token'},
+  @override
+  void dispose() {
+    _animationController.dispose();
+    super.dispose();
+  }
+
+  void _initializeAnimations() {
+    _animationController = AnimationController(
+      duration: const Duration(milliseconds: 300),
+      vsync: this,
     );
-    if (response.statusCode == 200) {
-      final List data = json.decode(response.body);
-      return data.map((e) => NotificationItem.fromJson(e)).toList();
-    } else {
-      throw Exception('Erro ao buscar notificações');
-    }
-  }
-
-  String? _getUserIdFromToken(String? token) {
-    if (token == null) return null;
-    // Decodifique o JWT para pegar o sub/userId
-    final parts = token.split('.');
-    if (parts.length != 3) return null;
-    final payload = utf8.decode(base64Url.decode(base64Url.normalize(parts[1])));
-    final Map<String, dynamic> jsonPayload = json.decode(payload);
-    return jsonPayload['sub'];
-  }
-
-  Future<void> _markAsRead(String notificationId, String token) async {
-    await http.patch(
-      Uri.parse('$baseUrl/notification/notifications/$notificationId/read'),
-      headers: {'Authorization': 'Bearer $token'},
+    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(parent: _animationController, curve: Curves.easeInOut),
     );
+    _animationController.forward();
+  }
+
+  void _loadNotifications() {
+    setState(() {
+      _futureNotifications = NotificationService.fetchNotifications();
+    });
+  }
+
+  void _toggleSelection(NotificationItem notification) {
+    setState(() {
+      if (_selectedNotifications.contains(notification)) {
+        _selectedNotifications.remove(notification);
+      } else {
+        _selectedNotifications.add(notification);
+      }
+
+      if (_selectedNotifications.isEmpty) {
+        _isSelectionMode = false;
+      }
+    });
   }
 
   void _onNotificationTap(NotificationItem notification) async {
-    final prefs = await SharedPreferences.getInstance();
-    final token = prefs.getString('auth_token');
-    await _markAsRead(notification.id, token!);
-    if (notification.type == 'reservation_request') {
-      Navigator.pushNamed(context, '/owner-reservations', arguments: notification.reservationId);
+    if (_isSelectionMode) {
+      _toggleSelection(notification);
+      return;
+    }
+
+    // Marca como lida se não estiver lida
+    if (!notification.isRead) {
+      try {
+        await NotificationService.markAsRead(notification.id);
+        _loadNotifications(); // Recarrega para atualizar o status
+      } catch (e) {
+        NotificationFeedback.showError(context, 'Erro ao marcar como lida');
+      }
+    }
+
+    // Navega para a tela apropriada
+    NotificationNavigator.navigateToTarget(context, notification);
+  }
+
+  void _onNotificationLongPress(NotificationItem notification) {
+    setState(() {
+      _isSelectionMode = true;
+      if (!_selectedNotifications.contains(notification)) {
+        _selectedNotifications.add(notification);
+      }
+    });
+  }
+
+  void _onBackPressed() {
+    if (_isSelectionMode) {
+      setState(() {
+        _isSelectionMode = false;
+        _selectedNotifications.clear();
+      });
     } else {
-      Navigator.pushNamed(context, '/my-reservations', arguments: notification.reservationId);
+      Navigator.pop(context);
+    }
+  }
+
+  void _onSelectAll(List<NotificationItem> notifications) {
+    setState(() {
+      _selectedNotifications = List.from(notifications);
+    });
+  }
+
+  void _onDeselectAll() {
+    setState(() {
+      _selectedNotifications.clear();
+    });
+  }
+
+  Future<void> _onDeleteSelected() async {
+    if (_selectedNotifications.isEmpty) return;
+
+    final confirmed = await NotificationDialogs.showDeleteConfirmation(
+      context,
+      _selectedNotifications.length,
+    );
+
+    if (!confirmed) return;
+
+    try {
+      final notificationIds = _selectedNotifications.map((n) => n.id).toList();
+      await NotificationService.deleteMultipleNotifications(notificationIds);
+
+      setState(() {
+        _selectedNotifications.clear();
+        _isSelectionMode = false;
+      });
+
+      _loadNotifications();
+      NotificationFeedback.showSuccess(
+        context,
+        'Notificações deletadas com sucesso',
+      );
+    } catch (e) {
+      NotificationFeedback.showError(context, 'Erro ao deletar notificações');
     }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.grey[50],
+      backgroundColor: const Color(0xFFF8FAFC),
       body: SafeArea(
-        child: Column(
-          children: [
-            FutureBuilder<List<NotificationItem>>(
-              future: _futureNotifications,
-              builder: (context, snapshot) {
-                final notifications = snapshot.data ?? [];
-                final unreadCount = notifications.where((n) => !n.isRead).length;
-                return _buildHeader(context, unreadCount);
-              },
-            ),
-            Expanded(
-              child: FutureBuilder<List<NotificationItem>>(
-                future: _futureNotifications,
-                builder: (context, snapshot) {
-                  if (snapshot.connectionState == ConnectionState.waiting) {
-                    return const Center(child: CircularProgressIndicator());
-                  }
-                  if (snapshot.hasError) {
-                    return Center(child: Text('Erro ao carregar notificações'));
-                  }
-                  final notifications = snapshot.data ?? [];
-                  if (notifications.isEmpty) {
-                    return _buildEmptyState();
-                  }
-                  return ListView.builder(
-                    itemCount: notifications.length,
-                    itemBuilder: (context, index) {
-                      final n = notifications[index];
-                      return ListTile(
-                        title: Text(n.title),
-                        subtitle: Text(n.message),
-                        trailing: n.isRead ? null : Icon(Icons.fiber_new, color: Colors.red),
-                        onTap: () => _onNotificationTap(n),
-                      );
-                    },
-                  );
-                },
-              ),
-            ),
-          ],
+        child: FadeTransition(
+          opacity: _fadeAnimation,
+          child: Column(
+            children: [
+              _buildHeader(),
+              Expanded(child: _buildBody()),
+            ],
+          ),
         ),
       ),
     );
   }
 
-  Widget _buildHeader(BuildContext context, int unreadCount) {
-    return Container(
-      padding: const EdgeInsets.all(20),
-      child: Row(
-        children: [
-          GestureDetector(
-            onTap: () => Navigator.pop(context),
-            child: Container(
-              padding: const EdgeInsets.all(8),
-              child: const Icon(Icons.arrow_back_ios, size: 18),
-            ),
-          ),
-          const Expanded(
-            child: Text(
-              'Notificações',
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.w600,
-                color: Colors.black,
-              ),
-            ),
-          ),
-          if (unreadCount > 0)
-            Container(
-              margin: const EdgeInsets.only(left: 8),
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-              decoration: BoxDecoration(
-                color: Colors.red,
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Text(
-                '$unreadCount',
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 12,
-                ),
-              ),
-            ),
-          Container(
-            padding: const EdgeInsets.all(8),
-            child: const Icon(Icons.more_horiz, size: 20),
-          ),
-        ],
-      ),
+  Widget _buildHeader() {
+    return FutureBuilder<List<NotificationItem>>(
+      future: _futureNotifications,
+      builder: (context, snapshot) {
+        final notifications = snapshot.data ?? [];
+        final unreadCount = notifications.where((n) => !n.isRead).length;
+
+        return NotificationHeader(
+          unreadCount: unreadCount,
+          isSelectionMode: _isSelectionMode,
+          selectedCount: _selectedNotifications.length,
+          onBackPressed: _onBackPressed,
+          onDeleteSelected: _selectedNotifications.isNotEmpty
+              ? _onDeleteSelected
+              : null,
+          onSelectAll: _isSelectionMode
+              ? () => _onSelectAll(notifications)
+              : null,
+          onDeselectAll: _isSelectionMode && _selectedNotifications.isNotEmpty
+              ? _onDeselectAll
+              : null,
+        );
+      },
     );
   }
 
-  Widget _buildEmptyState() {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Stack(
-            alignment: Alignment.center,
-            children: [
-              Container(
-                width: 120,
-                height: 120,
-                decoration: BoxDecoration(
-                  color: Colors.grey[100],
-                  shape: BoxShape.circle,
+  Widget _buildBody() {
+    return FutureBuilder<List<NotificationItem>>(
+      future: _futureNotifications,
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const NotificationLoadingState();
+        }
+
+        if (snapshot.hasError) {
+          return NotificationErrorState(onRetry: _loadNotifications);
+        }
+
+        final notifications = snapshot.data ?? [];
+        if (notifications.isEmpty) {
+          return const NotificationEmptyState();
+        }
+
+        return _buildNotificationsList(notifications);
+      },
+    );
+  }
+
+  Widget _buildNotificationsList(List<NotificationItem> notifications) {
+    final groupedNotifications = NotificationGrouper.groupByPeriod(
+      notifications,
+    );
+
+    return ListView(
+      padding: const EdgeInsets.all(20),
+      children: [
+        for (final entry in groupedNotifications.entries) ...[
+          SectionHeader(title: entry.key),
+          ...entry.value
+              .map(
+                (notification) => NotificationCard(
+                  notification: notification,
+                  isSelected: _selectedNotifications.contains(notification),
+                  isSelectionMode: _isSelectionMode,
+                  onTap: () => _onNotificationTap(notification),
+                  onLongPress: () => _onNotificationLongPress(notification),
                 ),
-              ),
-              Icon(Icons.notifications_none, size: 60, color: Colors.grey[400]),
-              Positioned(
-                top: 15,
-                right: 25,
-                child: Container(
-                  width: 24,
-                  height: 24,
-                  decoration: const BoxDecoration(
-                    color: Colors.white,
-                    shape: BoxShape.circle,
-                  ),
-                  child: const Center(
-                    child: Text(
-                      '0',
-                      style: TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.black,
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 32),
-          const Text(
-            'NENHUMA NOTIFICAÇÃO',
-            style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.bold,
-              color: Colors.black,
-              letterSpacing: 0.5,
-            ),
-          ),
-          const SizedBox(height: 12),
-          Text(
-            'Tudo limpo. Nós iremos notificá-lo\nquando houver algo novo.',
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              fontSize: 14,
-              color: Colors.grey[600],
-              height: 1.5,
-            ),
-          ),
+              )
+              .toList(),
+          const SizedBox(height: 16),
         ],
-      ),
+      ],
     );
   }
 }
