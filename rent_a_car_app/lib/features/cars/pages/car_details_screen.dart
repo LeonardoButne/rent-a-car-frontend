@@ -179,10 +179,17 @@ class _CarDetailsScreenState extends State<CarDetailsScreen> {
   }
 }
 
+// ===========================
+// 📁 Modificação no CarDetailsScreen - Dialog Melhorado
+// ===========================
+
+// Substitua as classes _ReservationDialog e _ReservationDialogResult por estas:
+
 class _ReservationDialogResult {
   final DateTime startDate;
   final DateTime endDate;
   final String? notes;
+
   _ReservationDialogResult({
     required this.startDate,
     required this.endDate,
@@ -192,7 +199,9 @@ class _ReservationDialogResult {
 
 class _ReservationDialog extends StatefulWidget {
   final ApiCar car;
+
   const _ReservationDialog({super.key, required this.car});
+
   @override
   State<_ReservationDialog> createState() => _ReservationDialogState();
 }
@@ -211,32 +220,35 @@ class _ReservationDialogState extends State<_ReservationDialog> {
 
   Future<void> _pickDate({required bool isStart}) async {
     final now = DateTime.now();
+
     if (!isStart && _startDate == null) {
-      // Tentou escolher data de fim antes da data de início
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Por favor, selecione a data de início primeiro.'),
-          backgroundColor: Colors.orange,
+          content: Text('Selecione a data de início primeiro'),
+          backgroundColor: Colors.black,
         ),
       );
       return;
     }
+
     final initialDate = isStart
         ? (_startDate ?? now)
         : (_endDate ?? _startDate!.add(const Duration(days: 1)));
     final firstDate = isStart ? now : _startDate!.add(const Duration(days: 1));
+
     final picked = await showDatePicker(
       context: context,
       initialDate: initialDate,
       firstDate: firstDate,
       lastDate: DateTime(now.year + 2),
     );
+
     if (picked != null) {
       setState(() {
         if (isStart) {
           _startDate = picked;
-          // Limpa a data de fim se ela for inválida
-          if (_endDate != null && _endDate!.isBefore(_startDate!.add(const Duration(days: 1)))) {
+          if (_endDate != null &&
+              _endDate!.isBefore(_startDate!.add(const Duration(days: 1)))) {
             _endDate = null;
           }
         } else {
@@ -246,92 +258,455 @@ class _ReservationDialogState extends State<_ReservationDialog> {
     }
   }
 
+  double _calculatePrice() {
+    if (_startDate == null || _endDate == null) return 0;
+
+    return ReservationService.calculateReservationPrice(
+      startDate: _startDate!,
+      endDate: _endDate!,
+      dailyPrice: widget.car.precoPorDia,
+      weeklyPrice: widget.car.precoPorSemana,
+      monthlyPrice: widget.car.precoPorMes,
+    );
+  }
+
+  String _formatPeriod() {
+    if (_startDate == null || _endDate == null) return '';
+
+    return ReservationService.formatReservationPeriod(
+      startDate: _startDate!,
+      endDate: _endDate!,
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    return AlertDialog(
-      title: const Text('Reservar Carro'),
-      content: Form(
-        key: _formKey,
+    final totalPrice = _calculatePrice();
+    final period = _formatPeriod();
+
+    return Dialog(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+      insetPadding: const EdgeInsets.all(20),
+      child: Container(
+        constraints: const BoxConstraints(maxHeight: 600),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Row(
-              children: [
-                Expanded(
-                  child: GestureDetector(
-                    onTap: () => _pickDate(isStart: true),
-                    child: AbsorbPointer(
-                      child: TextFormField(
-                        decoration: const InputDecoration(
-                          labelText: 'Data Início',
-                        ),
-                        controller: TextEditingController(
-                          text: _startDate != null
-                              ? DateFormat('dd/MM/yyyy').format(_startDate!)
-                              : '',
-                        ),
-                        validator: (_) =>
-                            _startDate == null ? 'Selecione a data' : null,
-                      ),
+            // Header
+            Container(
+              padding: const EdgeInsets.all(20),
+              decoration: const BoxDecoration(
+                color: Colors.black,
+                borderRadius: BorderRadius.only(
+                  topLeft: Radius.circular(20),
+                  topRight: Radius.circular(20),
+                ),
+              ),
+              child: Row(
+                children: [
+                  const Icon(
+                    Icons.calendar_today,
+                    color: Colors.white,
+                    size: 24,
+                  ),
+                  const SizedBox(width: 12),
+                  const Text(
+                    'Reservar Veículo',
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
                     ),
                   ),
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: GestureDetector(
-                    onTap: () => _pickDate(isStart: false),
-                    child: AbsorbPointer(
-                      child: TextFormField(
-                        decoration: const InputDecoration(
-                          labelText: 'Data Fim',
-                        ),
-                        controller: TextEditingController(
-                          text: _endDate != null
-                              ? DateFormat('dd/MM/yyyy').format(_endDate!)
-                              : '',
-                        ),
-                        validator: (_) =>
-                            _endDate == null ? 'Selecione a data' : null,
-                      ),
+                  const Spacer(),
+                  GestureDetector(
+                    onTap: () => Navigator.pop(context),
+                    child: const Icon(
+                      Icons.close,
+                      color: Colors.white,
+                      size: 24,
                     ),
+                  ),
+                ],
+              ),
+            ),
+
+            // Content
+            Flexible(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.all(20),
+                child: Form(
+                  key: _formKey,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Car Info
+                      _buildCarSummary(),
+                      const SizedBox(height: 20),
+
+                      // Date Selection
+                      _buildDateSection(),
+                      const SizedBox(height: 20),
+
+                      // Price Breakdown
+                      if (_startDate != null && _endDate != null) ...[
+                        _buildPriceSection(totalPrice, period),
+                        const SizedBox(height: 20),
+                      ],
+
+                      // Notes
+                      _buildNotesSection(),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+
+            // Footer
+            _buildFooter(totalPrice),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildCarSummary() {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.grey[50],
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.grey[200]!),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 50,
+            height: 50,
+            decoration: BoxDecoration(
+              color: Colors.black,
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: const Icon(
+              Icons.directions_car,
+              color: Colors.white,
+              size: 28,
+            ),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  '${widget.car.marca} ${widget.car.modelo}',
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                Text(
+                  '${widget.car.ano} • ${widget.car.cor}',
+                  style: TextStyle(fontSize: 14, color: Colors.grey[600]),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDateSection() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          'Período da Reserva ',
+          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+        ),
+        const SizedBox(height: 12),
+        Row(
+          children: [
+            Expanded(
+              child: _buildDateSelector(
+                label: 'Início',
+                date: _startDate,
+                onTap: () => _pickDate(isStart: true),
+                icon: Icons.calendar_today,
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: _buildDateSelector(
+                label: 'Fim',
+                date: _endDate,
+                onTap: () => _pickDate(isStart: false),
+                icon: Icons.event,
+                enabled: _startDate != null,
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget _buildDateSelector({
+    required String label,
+    required DateTime? date,
+    required VoidCallback onTap,
+    required IconData icon,
+    bool enabled = true,
+  }) {
+    return GestureDetector(
+      onTap: enabled ? onTap : null,
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: enabled ? Colors.white : Colors.grey[100],
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: enabled ? Colors.grey[300]! : Colors.grey[200]!,
+          ),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(
+                  icon,
+                  size: 16,
+                  color: enabled ? Colors.black : Colors.grey[400],
+                ),
+                const SizedBox(width: 6),
+                Text(
+                  label,
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: enabled ? Colors.grey[600] : Colors.grey[400],
+                    fontWeight: FontWeight.w500,
                   ),
                 ),
               ],
             ),
-            const SizedBox(height: 12),
-            TextFormField(
-              controller: _notesController,
-              decoration: const InputDecoration(
-                labelText: 'Observação (opcional)',
+            const SizedBox(height: 8),
+            Text(
+              date != null
+                  ? DateFormat('dd/MM/yyyy').format(date)
+                  : 'Selecionar',
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+                color: enabled ? Colors.black : Colors.grey[400],
               ),
-              maxLines: 2,
             ),
           ],
         ),
       ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.pop(context),
-          child: const Text('Cancelar'),
-        ),
-        ElevatedButton(
-          onPressed: () {
-            if (_formKey.currentState!.validate()) {
-              Navigator.pop(
-                context,
-                _ReservationDialogResult(
-                  startDate: _startDate!,
-                  endDate: _endDate!,
-                  notes: _notesController.text.isNotEmpty
-                      ? _notesController.text
-                      : null,
+    );
+  }
+
+  Widget _buildPriceSection(double totalPrice, String period) {
+    final days = _endDate!.difference(_startDate!).inDays;
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.green.withOpacity(0.05),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.green.withOpacity(0.2)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(Icons.attach_money, size: 18, color: Colors.green[700]),
+              const SizedBox(width: 6),
+              Text(
+                'Resumo do Preço',
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.green[700],
                 ),
-              );
-            }
-          },
-          child: const Text('Reservar'),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          _buildPriceRow('Período:', period),
+          _buildPriceRow(
+            'Preço por dia:',
+            'MT ${widget.car.precoPorDia.toStringAsFixed(0)}',
+          ),
+          _buildPriceRow(
+            '$days ${days == 1 ? 'dia' : 'dias'}:',
+            'MT ${totalPrice.toStringAsFixed(0)}',
+          ),
+          const Divider(height: 16),
+          _buildPriceRow(
+            'Total:',
+            'MT ${totalPrice.toStringAsFixed(0)}',
+            isTotal: true,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildPriceRow(String label, String value, {bool isTotal = false}) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 2),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: isTotal ? 14 : 12,
+              fontWeight: isTotal ? FontWeight.bold : FontWeight.w500,
+              color: isTotal ? Colors.black : Colors.grey[700],
+            ),
+          ),
+          Text(
+            value,
+            style: TextStyle(
+              fontSize: isTotal ? 16 : 12,
+              fontWeight: FontWeight.bold,
+              color: isTotal ? Colors.green[700] : Colors.grey[800],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildNotesSection() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          'Observações (opcional)',
+          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+        ),
+        const SizedBox(height: 12),
+        TextField(
+          controller: _notesController,
+          maxLines: 3,
+          decoration: InputDecoration(
+            hintText: 'Adicione observações sobre sua reserva...',
+            hintStyle: TextStyle(color: Colors.grey[500]),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide(color: Colors.grey[300]!),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: const BorderSide(color: Colors.black),
+            ),
+            contentPadding: const EdgeInsets.all(16),
+          ),
         ),
       ],
+    );
+  }
+
+  Widget _buildFooter(double totalPrice) {
+    final canReserve = _formKey.currentState?.validate() ?? false;
+    final hasValidDates = _startDate != null && _endDate != null;
+
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        border: Border(top: BorderSide(color: Colors.grey[200]!)),
+        borderRadius: const BorderRadius.only(
+          bottomLeft: Radius.circular(20),
+          bottomRight: Radius.circular(20),
+        ),
+      ),
+      child: Column(
+        children: [
+          if (totalPrice > 0) ...[
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Text(
+                  'Total da Reserva:',
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                ),
+                Text(
+                  'MT ${totalPrice.toStringAsFixed(0)}',
+                  style: const TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.black,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+          ],
+          Row(
+            children: [
+              Expanded(
+                child: TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  style: TextButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                  child: const Text(
+                    'Cancelar',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.grey,
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                flex: 2,
+                child: ElevatedButton(
+                  onPressed: hasValidDates
+                      ? () {
+                          Navigator.pop(
+                            context,
+                            _ReservationDialogResult(
+                              startDate: _startDate!,
+                              endDate: _endDate!,
+                              notes: _notesController.text.isNotEmpty
+                                  ? _notesController.text
+                                  : null,
+                            ),
+                          );
+                        }
+                      : null,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.black,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    elevation: 0,
+                  ),
+                  child: const Text(
+                    'Confirmar Reserva',
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
     );
   }
 }
