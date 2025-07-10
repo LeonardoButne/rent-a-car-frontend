@@ -56,8 +56,8 @@ class _OwnerReservationsScreenState extends State<OwnerReservationsScreen> {
                 onRefresh: _refresh,
                 child: FutureBuilder<List<OwnerReservation>>(
                   future: _futureReservations,
-                  builder: (context, snapshot) {
-                    if (snapshot.connectionState == ConnectionState.waiting) {
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
                       return const Center(
                         child: CircularProgressIndicator(color: Colors.orange),
                       );
@@ -72,84 +72,127 @@ class _OwnerReservationsScreenState extends State<OwnerReservationsScreen> {
 
                     final reservations = snapshot.data ?? [];
 
-                    if (reservations.isEmpty) {
+                    // Filtrar apenas as reservas pendentes, ativadas e aprovadas
+                    final activeReservations = reservations
+                        .where((r) => r.status.toLowerCase() == 'pending' || r.status.toLowerCase() == 'active' || r.status.toLowerCase() == 'approved')
+                        .toList();
+
+                    if (activeReservations.isEmpty) {
                       return const EmptyOwnerReservationState();
                     }
 
-                    return ListView.separated(
+          return ListView.separated(
                       padding: const EdgeInsets.all(20),
-                      itemCount: reservations.length,
+            itemCount: activeReservations.length,
                       separatorBuilder: (_, __) => const SizedBox(height: 16),
-                      itemBuilder: (context, index) {
-                        final reservation = reservations[index];
+            itemBuilder: (context, index) {
+                        final reservation = activeReservations[index];
                         return OwnerReservationListItem(
                           reservation: reservation,
-                          onTap: () => _navigateToDetails(reservation.id),
-                          onApprove:
-                              reservation.status.toLowerCase() == 'pending'
+                          onTap: () async {
+                            _navigateToDetails(reservation.id);
+                          },
+                          onApprove: reservation.status.toLowerCase() == 'pending'
                               ? () async {
-                                  setState(() {
-                                    _isLoadingAction = true;
-                                  });
-                                  try {
-                                    await OwnerService.approveReservation(
-                                      reservation.id,
-                                    );
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      const SnackBar(
-                                        content: Text(
-                                          'Reserva aprovada com sucesso!',
+                                  final confirm = await showDialog<bool>(
+                                    context: context,
+                                    builder: (context) => AlertDialog(
+                                      title: const Text('Aprovar reserva'),
+                                      content: const Text('Tem certeza que deseja aprovar esta reserva?'),
+                                      actions: [
+                                        TextButton(
+                                          onPressed: () => Navigator.pop(context, false),
+                                          child: const Text('Cancelar'),
                                         ),
-                                        backgroundColor: Colors.green,
-                                      ),
-                                    );
-                                    _refresh();
-                                  } catch (e) {
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      SnackBar(
-                                        content: Text(
-                                          'Erro ao aprovar reserva: $e',
+                                        TextButton(
+                                          onPressed: () => Navigator.pop(context, true),
+                                          child: const Text('Aprovar', style: TextStyle(color: Colors.green)),
                                         ),
-                                        backgroundColor: Colors.red,
-                                      ),
-                                    );
-                                  } finally {
+                                      ],
+                                    ),
+                                  );
+                                  if (confirm == true) {
                                     setState(() {
-                                      _isLoadingAction = false;
+                                      _isLoadingAction = true;
                                     });
+                                    try {
+                                      await OwnerService.approveReservation(
+                                        reservation.id,
+                                      );
+                                      ScaffoldMessenger.of(context).showSnackBar(
+                                        const SnackBar(
+                                          content: Text(
+                                            'Reserva aprovada com sucesso!',
+                                          ),
+                                          backgroundColor: Colors.green,
+                                        ),
+                                      );
+                                      _refresh();
+                                    } catch (e) {
+                                      ScaffoldMessenger.of(context).showSnackBar(
+                                        SnackBar(
+                                          content: Text(
+                                            'Erro ao aprovar reserva: $e',
+                                          ),
+                                          backgroundColor: Colors.red,
+                                        ),
+                                      );
+                                    } finally {
+                                      setState(() {
+                                        _isLoadingAction = false;
+                                      });
+                                    }
                                   }
                                 }
                               : null,
-                          onReject:
-                              reservation.status.toLowerCase() == 'pending'
+                          onReject: reservation.status.toLowerCase() == 'pending'
                               ? () async {
-                                  setState(() {
-                                    _isLoadingAction = true;
-                                  });
-                                  try {
-                                    await OwnerService.rejectReservation(
-                                      reservation.id,
-                                    );
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      const SnackBar(
-                                        content: Text('Reserva rejeitada.'),
-                                        backgroundColor: Colors.orange,
-                                      ),
-                                    );
-                                    _refresh();
-                                  } catch (e) {
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      SnackBar(
-                                        content: Text(
-                                          'Erro ao rejeitar reserva: $e',
+                                  final confirm = await showDialog<bool>(
+                                    context: context,
+                                    builder: (context) => AlertDialog(
+                                      title: const Text('Rejeitar reserva'),
+                                      content: const Text('Tem certeza que deseja rejeitar esta reserva?'),
+                                      actions: [
+                                        TextButton(
+                                          onPressed: () => Navigator.pop(context, false),
+                                          child: const Text('Cancelar'),
                                         ),
-                                        backgroundColor: Colors.red,
-                                      ),
-                                    );
-                                  } finally {
+                                        TextButton(
+                                          onPressed: () => Navigator.pop(context, true),
+                                          child: const Text('Rejeitar', style: TextStyle(color: Colors.red)),
+                                        ),
+                                      ],
+                                    ),
+                                  );
+                                  if (confirm == true) {
                                     setState(() {
-                                      _isLoadingAction = false;
+                                      _isLoadingAction = true;
                                     });
+                                    try {
+                                      await OwnerService.rejectReservation(
+                                        reservation.id,
+                                      );
+                                      ScaffoldMessenger.of(context).showSnackBar(
+                                        const SnackBar(
+                                          content: Text('Reserva rejeitada.'),
+                                          backgroundColor: Colors.orange,
+                                        ),
+                                      );
+                                      _refresh();
+                                    } catch (e) {
+                                      ScaffoldMessenger.of(context).showSnackBar(
+                                        SnackBar(
+                                          content: Text(
+                                            'Erro ao rejeitar reserva: $e',
+                                          ),
+                                          backgroundColor: Colors.red,
+                                        ),
+                                      );
+                                    } finally {
+                                      setState(() {
+                                        _isLoadingAction = false;
+                                      });
+                                    }
                                   }
                                 }
                               : null,
@@ -159,10 +202,10 @@ class _OwnerReservationsScreenState extends State<OwnerReservationsScreen> {
                     );
                   },
                 ),
-              ),
-            ),
-          ],
-        ),
+                            ),
+                          ),
+                        ],
+                      ),
       ),
     );
   }

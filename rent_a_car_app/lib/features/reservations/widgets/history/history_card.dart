@@ -5,8 +5,9 @@ import 'package:rent_a_car_app/models/rental_history.dart';
 class HistoryCard extends StatelessWidget {
   final RentalHistory rental;
   final VoidCallback? onTap;
+  final bool isOwner;
 
-  const HistoryCard({super.key, required this.rental, this.onTap});
+  const HistoryCard({super.key, required this.rental, this.onTap, this.isOwner = false});
 
   @override
   Widget build(BuildContext context) {
@@ -47,9 +48,19 @@ class HistoryCard extends StatelessWidget {
         color: Colors.grey[100],
         borderRadius: BorderRadius.circular(12),
       ),
-      child: Center(
-        child: Icon(Icons.directions_car, size: 30, color: Colors.grey[400]),
-      ),
+      child: rental.carImage.isNotEmpty
+          ? ClipRRect(
+              borderRadius: BorderRadius.circular(12),
+              child: Image.network(
+                rental.carImage,
+                fit: BoxFit.cover,
+                errorBuilder: (context, error, stackTrace) =>
+                    Icon(Icons.directions_car, size: 30, color: Colors.grey[400]),
+              ),
+            )
+          : Center(
+              child: Icon(Icons.directions_car, size: 30, color: Colors.grey[400]),
+            ),
     );
   }
 
@@ -70,6 +81,22 @@ class HistoryCard extends StatelessWidget {
           rental.carBrand,
           style: TextStyle(fontSize: 12, color: Colors.grey[600]),
         ),
+        if (isOwner) ...[
+          const SizedBox(height: 4),
+          Row(
+            children: [
+              Icon(Icons.person, size: 12, color: Colors.grey[400]),
+              const SizedBox(width: 4),
+              Flexible(
+                child: Text(
+                  rental.clientName,
+                  style: TextStyle(fontSize: 12, color: Colors.grey[700]),
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+            ],
+          ),
+        ],
         const SizedBox(height: 8),
         Row(
           children: [
@@ -84,9 +111,9 @@ class HistoryCard extends StatelessWidget {
         const SizedBox(height: 4),
         Row(
           children: [
-            Icon(Icons.attach_money, size: 12, color: Colors.grey[400]),
+            Icon(Icons.currency_exchange, size: 12, color: Colors.grey[400]),
             Text(
-              'R\$ ${rental.totalValue.toStringAsFixed(0)}',
+              'MZN ${rental.totalValue.toStringAsFixed(0)}',
               style: const TextStyle(
                 fontSize: 12,
                 fontWeight: FontWeight.w600,

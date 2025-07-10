@@ -4,6 +4,7 @@ enum RentalStatus {
   completed, // Concluído
   cancelled, // Cancelado
   ongoing, // Em andamento
+  rejected, // Rejeitado
 }
 
 /// Modelo para histórico de aluguel
@@ -18,6 +19,9 @@ class RentalHistory {
   final RentalStatus status;
   final double? userRating; // Avaliação dada pelo usuário
   final int totalDays;
+  final String ownerId;
+  final String clientName;
+  final String clientEmail;
 
   RentalHistory({
     required this.id,
@@ -30,25 +34,33 @@ class RentalHistory {
     required this.status,
     this.userRating,
     required this.totalDays,
+    required this.ownerId,
+    required this.clientName,
+    required this.clientEmail,
   });
 
   /// Cria instância a partir do JSON da API
   factory RentalHistory.fromJson(Map<String, dynamic> json) {
+    final car = json['car'] ?? {};
+    final images = (car['images'] as List?) ?? [];
+    final carImage = images.isNotEmpty ? images[0]['url'] ?? '' : '';
+    final startDate = DateTime.parse(json['startDate'] ?? DateTime.now().toIso8601String());
+    final endDate = DateTime.parse(json['endDate'] ?? DateTime.now().toIso8601String());
+    final client = json['client'] ?? {};
     return RentalHistory(
       id: json['id']?.toString() ?? '',
-      carName: json['car_name'] ?? '',
-      carBrand: json['car_brand'] ?? '',
-      carImage: json['car_image'] ?? '',
-      startDate: DateTime.parse(
-        json['start_date'] ?? DateTime.now().toIso8601String(),
-      ),
-      endDate: DateTime.parse(
-        json['end_date'] ?? DateTime.now().toIso8601String(),
-      ),
-      totalValue: (json['total_value'] ?? 0).toDouble(),
+      carName: car['modelo'] ?? '',
+      carBrand: car['marca'] ?? '',
+      carImage: carImage,
+      startDate: startDate,
+      endDate: endDate,
+      totalValue: double.tryParse(json['price']?.toString() ?? '0') ?? 0.0,
       status: _parseStatus(json['status']),
-      userRating: json['user_rating']?.toDouble(),
-      totalDays: json['total_days'] ?? 0,
+      userRating: null, // Não há avaliação no JSON
+      totalDays: endDate.difference(startDate).inDays,
+      ownerId: json['ownerId'] ?? '',
+      clientName: client['name'] ?? '',
+      clientEmail: client['email'] ?? '',
     );
   }
 
@@ -77,6 +89,8 @@ class RentalHistory {
         return RentalStatus.cancelled;
       case 'ongoing':
         return RentalStatus.ongoing;
+      case 'rejected':
+        return RentalStatus.rejected;
       default:
         return RentalStatus.completed;
     }
@@ -91,6 +105,8 @@ class RentalHistory {
         return const Color(0xFFF44336); // Vermelho
       case RentalStatus.ongoing:
         return const Color(0xFF2196F3); // Azul
+      case RentalStatus.rejected:
+        return const Color(0xFFBDBDBD); // Cinza
     }
   }
 
@@ -103,6 +119,8 @@ class RentalHistory {
         return 'Cancelado';
       case RentalStatus.ongoing:
         return 'Em andamento';
+      case RentalStatus.rejected:
+        return 'Rejeitado';
     }
   }
 }

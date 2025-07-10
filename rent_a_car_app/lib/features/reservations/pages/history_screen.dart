@@ -3,6 +3,8 @@ import 'package:rent_a_car_app/core/services/history_service.dart';
 import 'package:rent_a_car_app/models/rental_history.dart';
 import 'package:rent_a_car_app/features/reservations/widgets/history/history_card.dart';
 import 'package:rent_a_car_app/features/reservations/widgets/history/loading_skeleton.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:jwt_decoder/jwt_decoder.dart';
 
 class HistoryScreen extends StatefulWidget {
   const HistoryScreen({super.key});
@@ -16,18 +18,32 @@ class _HistoryScreenState extends State<HistoryScreen> {
   Map<String, dynamic> _stats = {};
   String _selectedFilter = 'Todos';
   bool _isLoading = true;
+  String _typeAccount = '';
+  String _userId = '';
 
   final List<String> _filterOptions = [
     'Todos',
     'Concluídos',
-    'Em andamento',
     'Cancelados',
+    'Rejeitados',
   ];
 
   @override
   void initState() {
     super.initState();
-    _loadData();
+    _loadUserType().then((_) => _loadData());
+  }
+
+  Future<void> _loadUserType() async {
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString('auth_token');
+    if (token != null && token.isNotEmpty) {
+      Map<String, dynamic> decodedToken = JwtDecoder.decode(token);
+      setState(() {
+        _typeAccount = decodedToken['typeAccount'] ?? '';
+        _userId = decodedToken['sub'] ?? '';
+      });
+    }
   }
 
   /// Carrega dados do histórico da API
@@ -39,11 +55,20 @@ class _HistoryScreenState extends State<HistoryScreen> {
     try {
       // Carrega dados da API real
       final history = await HistoryService.getHistory();
-      final stats = await HistoryService.getUserStats();
-
+      List<RentalHistory> filteredHistory = history;
+      // Só filtrar se _typeAccount for owner e _userId não for vazio
+      if (_typeAccount == 'owner' && _userId.isNotEmpty) {
+        filteredHistory = history.where((h) => h.ownerId == _userId).toList();
+      }
+      // Calcular estatísticas localmente
+      final totalCars = filteredHistory.length;
+      final totalSpent = filteredHistory.fold<double>(0, (sum, h) => sum + h.totalValue);
       setState(() {
-        _history = history;
-        _stats = stats;
+        _history = filteredHistory;
+        _stats = {
+          'totalCars': totalCars,
+          'totalSpent': totalSpent,
+        };
         _isLoading = false;
       });
     } catch (error) {
@@ -68,11 +93,13 @@ class _HistoryScreenState extends State<HistoryScreen> {
         return _history
             .where((h) => h.status == RentalStatus.completed)
             .toList();
-      case 'Em andamento':
-        return _history.where((h) => h.status == RentalStatus.ongoing).toList();
       case 'Cancelados':
         return _history
             .where((h) => h.status == RentalStatus.cancelled)
+            .toList();
+      case 'Rejeitados':
+        return _history
+            .where((h) => h.status == RentalStatus.rejected)
             .toList();
       default:
         return _history;
@@ -160,8 +187,8 @@ class _HistoryScreenState extends State<HistoryScreen> {
         children: [
           Expanded(
             child: _buildStatItem(
-              '${_stats['totalTrips']}',
-              'Viagens',
+              '${_stats['totalCars']}',
+              'Carros alugados',
               Icons.directions_car,
               Colors.blue,
             ),
@@ -169,15 +196,11 @@ class _HistoryScreenState extends State<HistoryScreen> {
           Container(width: 1, height: 40, color: Colors.grey[200]),
           Expanded(
             child: _buildStatItem(
-              '${_stats['totalSpent']?.toStringAsFixed(0)} Meticais',
-              'Gasto Total',
-              Icons.attach_money,
+              '${_stats['totalSpent']?.toStringAsFixed(0)} MZN',
+              'Valor gasto',
+              Icons.currency_exchange,
               Colors.green,
             ),
-          ),
-          Container(width: 1, height: 40, color: Colors.grey[200]),
-          Expanded(
-            child: _buildStatItem('⭐', 'Favorito', Icons.favorite, Colors.red),
           ),
         ],
       ),
@@ -262,6 +285,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
       itemBuilder: (context, index) {
         return HistoryCard(
           rental: filteredHistory[index],
+          isOwner: _typeAccount == 'owner',
           // onTap: () => _showRentalDetails(filteredHistory[index]),
         );
       },
