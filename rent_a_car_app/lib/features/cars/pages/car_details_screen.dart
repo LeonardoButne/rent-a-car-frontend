@@ -422,7 +422,7 @@ class _ReservationDialogState extends State<_ReservationDialog> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const Text(
-          'Período da Reserva',
+          'Período da Reserva ',
           style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
         ),
         const SizedBox(height: 12),
