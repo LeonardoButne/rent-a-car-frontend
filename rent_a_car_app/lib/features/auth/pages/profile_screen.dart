@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:rent_a_car_app/features/auth/pages/edit_profile_screen.dart';
+import 'package:rent_a_car_app/features/reservations/pages/favorite_cars_screen.dart';
 import 'package:rent_a_car_app/models/profile_menu_item.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:jwt_decoder/jwt_decoder.dart';
 import 'package:rent_a_car_app/features/cars/pages/vehicle_registration_screen.dart';
 import 'package:rent_a_car_app/features/owner/pages/owner_reservations_screen.dart';
-
 
 import 'my_reservations_screen.dart';
 import '../../notifications/pages/notification_screen.dart';
@@ -73,7 +73,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
           ],
         ),
       ),
-
     );
   }
 
@@ -194,7 +193,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
         ProfileMenuItem(
           icon: Icons.favorite_outline,
           title: 'Carros Favoritos',
-          onTap: _navigateToFavorites,
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => FavoritesScreen()),
+            );
+          },
         ),
         ProfileMenuItem(
           icon: Icons.history,
@@ -370,45 +374,35 @@ class _ProfileScreenState extends State<ProfileScreen> {
   void _navigateToHistory() {
     Navigator.push(
       context,
-      MaterialPageRoute(
-        builder: (context) => HistoryScreen(),
-      ),
+      MaterialPageRoute(builder: (context) => HistoryScreen()),
     );
   }
 
   void _navigateToNotifications() {
     Navigator.push(
       context,
-      MaterialPageRoute(
-        builder: (context) => NotificationsScreen(),
-      ),
+      MaterialPageRoute(builder: (context) => NotificationsScreen()),
     );
   }
 
   void _navigateToMyReservations() {
     Navigator.push(
       context,
-      MaterialPageRoute(
-        builder: (context) => MyReservationsScreen(),
-      ),
+      MaterialPageRoute(builder: (context) => MyReservationsScreen()),
     );
   }
 
   void _navigateToVehicleRegistration() {
     Navigator.push(
       context,
-      MaterialPageRoute(
-        builder: (context) => VehicleRegistrationScreen(),
-      ),
+      MaterialPageRoute(builder: (context) => VehicleRegistrationScreen()),
     );
   }
 
   void _navigateToMyCars() {
     Navigator.push(
       context,
-      MaterialPageRoute(
-        builder: (context) => MyCarsScreen(),
-      ),
+      MaterialPageRoute(builder: (context) => MyCarsScreen()),
     );
   }
 
