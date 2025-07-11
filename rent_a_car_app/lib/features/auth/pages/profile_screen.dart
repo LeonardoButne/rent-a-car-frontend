@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:rent_a_car_app/features/auth/pages/edit_profile_screen.dart';
-import 'package:rent_a_car_app/features/reservations/pages/favorite_cars_screen.dart';
+import 'package:rent_a_car_app/features/reservations/pages/favorites_screen.dart';
 import 'package:rent_a_car_app/models/profile_menu_item.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:jwt_decoder/jwt_decoder.dart';
