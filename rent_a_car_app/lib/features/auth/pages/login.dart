@@ -44,6 +44,7 @@ class _LoginState extends State<Login> {
         // Login direto
         final prefs = await SharedPreferences.getInstance();
         await prefs.setString('auth_token', token);
+        await initFCM(context); // <-- Adicionado para garantir envio do deviceToken
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(builder: (context) => const HomeScreen()),

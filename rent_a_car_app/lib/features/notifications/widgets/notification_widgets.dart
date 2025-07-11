@@ -284,6 +284,10 @@ class NotificationIcon extends StatelessWidget {
         return Icons.cancel_rounded;
       case 'discount':
         return Icons.local_offer_rounded;
+      case 'reservation_approved':
+        return Icons.check_circle_rounded;
+      case 'reservation_rejected':
+        return Icons.cancel_rounded;
       default:
         return Icons.notifications_rounded;
     }
@@ -303,6 +307,10 @@ class NotificationIcon extends StatelessWidget {
         return Colors.black;
       case 'discount':
         return Colors.black;
+      case 'reservation_approved':
+        return Colors.green;
+      case 'reservation_rejected':
+        return Colors.red;
       default:
         return Colors.black;
     }

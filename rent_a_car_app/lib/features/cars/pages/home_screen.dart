@@ -20,7 +20,7 @@ class HomeScreen extends StatefulWidget {
   State<HomeScreen> createState() => _HomeScreenState();
 }
 
-class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
+class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin, WidgetsBindingObserver {
   String? selectedBrand;
   String selectedServiceType = 'aluguer';
   List<ApiCar> allCars = [];
@@ -53,9 +53,26 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _initializeControllers();
     _loadData();
     selectedBottomIndex = 0;
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    super.didChangeAppLifecycleState(state);
+    if (state == AppLifecycleState.resumed) {
+      // Atualiza dados quando o app volta ao foco
+      _loadData();
+    }
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Recarrega dados sempre que a tela for aberta/focada
+    _loadData();
   }
 
   void _initializeControllers() {
@@ -75,6 +92,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     try {
       // Cancelar operações em andamento
       _loadDataCompleter?.complete();
@@ -366,6 +384,8 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
             setState(() {
               selectedBottomIndex = 0;
             });
+            // Força atualização do contador quando voltar da tela de notificações
+            _updateNotificationCount();
           }
         });
         break;
@@ -396,10 +416,17 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
             setState(() {
               selectedBottomIndex = 0;
             });
+            // Força atualização do contador quando voltar da tela de reservas
+            _updateNotificationCount();
           }
         });
         break;
     }
+  }
+
+  void _updateNotificationCount() {
+    // Força rebuild do AppBottomNavigation para atualizar o contador
+    setState(() {});
   }
 
   @override
@@ -417,6 +444,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
         ),
       ),
       bottomNavigationBar: AppBottomNavigation(
+        key: const ValueKey('bottom_navigation'),
         currentIndex: 0, // Home
         onTap: (index) {
           if (index == 0) Navigator.pushNamed(context, '/home');

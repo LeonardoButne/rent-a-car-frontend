@@ -1,5 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:rent_a_car_app/features/notifications/models/notification_item.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:rent_a_car_app/core/utils/base_url.dart';
 
 /// Classe para agrupar notificações por período
 class NotificationGrouper {
@@ -132,6 +136,10 @@ class NotificationNavigator {
       case 'pickup':
       case 'return':
       case 'cancellation':
+      case 'reservation_approved':
+      case 'reservation_rejected':
+        // Marcar todas as notificações relacionadas a reservas como lidas
+        _markReservationNotificationsAsRead(context);
         Navigator.pushNamed(
           context,
           '/my-reservations',
@@ -143,6 +151,70 @@ class NotificationNavigator {
       default:
         // Não navega para lugar nenhum
         break;
+    }
+  }
+
+  /// Marca todas as notificações relacionadas a reservas como lidas
+  static Future<void> _markReservationNotificationsAsRead(BuildContext context) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final token = prefs.getString('auth_token');
+      
+      if (token == null) return;
+
+      final userId = _getUserIdFromToken(token);
+      if (userId == null) return;
+
+      // Buscar todas as notificações não lidas relacionadas a reservas
+      final response = await http.get(
+        Uri.parse('$baseUrl/notification/notifications?userId=$userId'),
+        headers: {'Authorization': 'Bearer $token'},
+      );
+
+      if (response.statusCode == 200) {
+        final List data = json.decode(response.body);
+        final List<NotificationItem> notifications = data.map((e) => NotificationItem.fromJson(e)).toList();
+        
+        // Filtrar notificações não lidas relacionadas a reservas
+        final reservationNotificationTypes = [
+          'payment', 'pickup', 'return', 'cancellation', 
+          'reservation_approved', 'reservation_rejected'
+        ];
+        
+        final unreadReservationNotifications = notifications.where((n) => 
+          !n.isRead && reservationNotificationTypes.contains(n.type)
+        ).toList();
+
+        // Marcar todas como lidas
+        for (final notification in unreadReservationNotifications) {
+          await http.patch(
+            Uri.parse('$baseUrl/notification/notifications/${notification.id}/read'),
+            headers: {'Authorization': 'Bearer $token'},
+          );
+        }
+      }
+    } catch (e) {
+      // Silenciosamente ignora erros para não interromper a navegação
+      print('Erro ao marcar notificações como lidas: $e');
+    }
+  }
+
+  /// Extrai o ID do usuário do token JWT
+  static String? _getUserIdFromToken(String? token) {
+    if (token == null) return null;
+
+    try {
+      final parts = token.split('.');
+      if (parts.length != 3) return null;
+
+      final payload = utf8.decode(
+        base64Url.decode(base64Url.normalize(parts[1])),
+      );
+
+      final Map<String, dynamic> jsonPayload = json.decode(payload);
+      return jsonPayload['sub'];
+    } catch (e) {
+      return null;
     }
   }
 }

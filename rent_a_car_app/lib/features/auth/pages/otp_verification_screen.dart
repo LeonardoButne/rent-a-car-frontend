@@ -4,6 +4,7 @@ import 'package:rent_a_car_app/core/services/api_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:rent_a_car_app/features/cars/pages/home_screen.dart';
 import 'package:rent_a_car_app/features/auth/pages/login.dart';
+import '../../../fcm_initializer.dart';
 
 class OTPVerificationScreen extends StatefulWidget {
   final String email;
@@ -68,6 +69,7 @@ class _OTPVerificationScreenState extends State<OTPVerificationScreen> {
       if (response.statusCode == 200 && token != null) {
         final prefs = await SharedPreferences.getInstance();
         await prefs.setString('auth_token', token);
+        await initFCM(context); // <-- Adicionado para garantir envio do deviceToken
         if (mounted) {
           Navigator.of(context).pushAndRemoveUntil(
             MaterialPageRoute(builder: (context) => const HomeScreen()),

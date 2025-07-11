@@ -58,6 +58,20 @@ Future<void> initFCM(BuildContext context) async {
       Navigator.pushNamed(context, '/my-reservations', arguments: reservationId);
     }
   });
+  messaging.onTokenRefresh.listen((String newToken) async {
+    final prefs = await SharedPreferences.getInstance();
+    final authToken = prefs.getString('auth_token');
+    if (authToken != null && authToken.isNotEmpty) {
+      await http.post(
+        Uri.parse('$baseUrl/device-token'),
+        headers: {
+          'Authorization': 'Bearer $authToken',
+          'Content-Type': 'application/json',
+        },
+        body: jsonEncode({'deviceToken': newToken}),
+      );
+    }
+  });
 }
 
 Future<String?> getFcmToken() async {

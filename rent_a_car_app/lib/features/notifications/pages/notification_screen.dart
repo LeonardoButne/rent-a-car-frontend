@@ -28,6 +28,13 @@ class _NotificationsScreenState extends State<NotificationsScreen>
   }
 
   @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Recarrega notificações sempre que a tela for aberta/focada
+    _loadNotifications();
+  }
+
+  @override
   void dispose() {
     _animationController.dispose();
     super.dispose();
