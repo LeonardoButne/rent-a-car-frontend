@@ -129,6 +129,7 @@ class OwnerReservation {
   final String status;
   final double price;
   final String? notes;
+  final DateTime createdAt;
   OwnerReservation({
     required this.id,
     required this.car,
@@ -138,6 +139,7 @@ class OwnerReservation {
     required this.status,
     required this.price,
     this.notes,
+    required this.createdAt,
   });
   factory OwnerReservation.fromJson(Map<String, dynamic> json) {
     double parsePrice(dynamic value) {
@@ -154,6 +156,9 @@ class OwnerReservation {
       status: json['status'],
       price: parsePrice(json['price']),
       notes: json['notes'],
+      createdAt: json['createdAt'] != null 
+          ? DateTime.parse(json['createdAt']) 
+          : DateTime.parse(json['startDate']), // Fallback para startDate se createdAt não existir
     );
   }
 }

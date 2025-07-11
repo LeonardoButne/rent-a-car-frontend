@@ -77,8 +77,8 @@ class _OwnerReservationsScreenState extends State<OwnerReservationsScreen> {
                         .where((r) => r.status.toLowerCase() == 'pending' || r.status.toLowerCase() == 'active' || r.status.toLowerCase() == 'approved')
                         .toList();
 
-                    // Ordenar da mais nova para a mais velha
-                    activeReservations.sort((a, b) => b.startDate.compareTo(a.startDate));
+                    // Ordenar da mais nova para a mais velha por data de criação
+                    activeReservations.sort((a, b) => b.createdAt.compareTo(a.createdAt));
 
                     if (activeReservations.isEmpty) {
                       return const EmptyOwnerReservationState();
