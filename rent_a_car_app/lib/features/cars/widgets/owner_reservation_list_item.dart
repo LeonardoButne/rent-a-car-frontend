@@ -23,8 +23,8 @@ class OwnerReservationListItem extends StatelessWidget {
   Widget build(BuildContext context) {
     final car = reservation.car;
     final client = reservation.client;
-    final imageUrl = car.images.isNotEmpty
-        ? _fixImageUrl(car.images.first.url)
+    final imageUrl = car?.images.isNotEmpty == true
+        ? _fixImageUrl(car!.images.first.url)
         : null;
 
     return GestureDetector(
@@ -116,7 +116,41 @@ class OwnerReservationListItem extends StatelessWidget {
     );
   }
 
-  Widget _buildReservationInfo(car, client) {
+  Widget _buildReservationInfo(OwnerCar? car, OwnerClient? client) {
+    if (car == null) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Carro removido pelo proprietário',
+            style: const TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+              color: Colors.red,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            'Este carro foi removido do sistema',
+            style: TextStyle(fontSize: 14, color: Colors.grey[600]),
+          ),
+          const SizedBox(height: 8),
+          if (client != null) ...[
+            Row(
+              children: [
+                Icon(Icons.person, size: 16, color: Colors.grey[600]),
+                const SizedBox(width: 4),
+                Text(
+                  client.name,
+                  style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                ),
+              ],
+            ),
+          ],
+        ],
+      );
+    }
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -139,7 +173,7 @@ class OwnerReservationListItem extends StatelessWidget {
             Icon(Icons.person, size: 16, color: Colors.grey[600]),
             const SizedBox(width: 4),
             Text(
-              client.name,
+              client?.name ?? 'Cliente não disponível',
               style: TextStyle(fontSize: 12, color: Colors.grey[600]),
             ),
           ],
@@ -258,7 +292,7 @@ class OwnerReservationListItem extends StatelessWidget {
           ),
           const SizedBox(height: 4),
           Text(
-            reservation.notes!,
+            reservation.notes ?? 'N/A',
             style: TextStyle(fontSize: 14, color: Colors.grey[700]),
           ),
         ],

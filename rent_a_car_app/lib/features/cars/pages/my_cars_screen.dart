@@ -7,6 +7,7 @@ import 'package:rent_a_car_app/features/cars/widgets/my_car_list_item.dart';
 import 'package:rent_a_car_app/features/cars/widgets/my_cars_header.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:jwt_decoder/jwt_decoder.dart';
+import 'package:rent_a_car_app/features/cars/pages/vehicle_registration_screen.dart';
 
 class MyCarsScreen extends StatefulWidget {
   const MyCarsScreen({super.key});
@@ -79,19 +80,10 @@ class _MyCarsScreenState extends State<MyCarsScreen> {
   }
 
   void _navigateToEdit(ApiCar car) async {
-    // Navigator.push(
-    //   context,
-    //   MaterialPageRoute(
-    //     builder: (context) => EditCarScreen(car: car),
-    //   ),
-    // );
-
-    // Por enquanto, mostra um SnackBar
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('Editar ${car.marca} ${car.modelo}'),
-        backgroundColor: Colors.blue,
-        duration: Duration(seconds: 2),
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => VehicleRegistrationScreen(car: car),
       ),
     );
   }
@@ -123,17 +115,27 @@ class _MyCarsScreenState extends State<MyCarsScreen> {
     );
 
     if (shouldDelete == true) {
-      // Remove da lista local
-      setState(() {
-        _myCars.removeWhere((c) => c.id == car.id);
-      });
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Veículo excluído com sucesso!'),
-          backgroundColor: Colors.green,
-        ),
-      );
+      try {
+        await CarService.deleteCar(car.id);
+        // Remove da lista local
+        setState(() {
+          _myCars.removeWhere((c) => c.id == car.id);
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Veículo excluído com sucesso!'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      } catch (e) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Erro ao excluir veículo: \u00024e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+        await _refresh();
+      }
     }
   }
 

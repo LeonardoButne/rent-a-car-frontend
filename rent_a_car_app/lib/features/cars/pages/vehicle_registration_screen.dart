@@ -5,9 +5,11 @@ import 'package:image_picker/image_picker.dart';
 import 'dart:io';
 import 'package:rent_a_car_app/core/utils/base_url.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:rent_a_car_app/core/models/car_model.dart';
 
 class VehicleRegistrationScreen extends StatefulWidget {
-  const VehicleRegistrationScreen({super.key});
+  final ApiCar? car;
+  const VehicleRegistrationScreen({super.key, this.car});
 
   @override
   _VehicleRegistrationScreenState createState() =>
@@ -25,6 +27,7 @@ class _VehicleRegistrationScreenState extends State<VehicleRegistrationScreen> {
   final TextEditingController _mileageController = TextEditingController();
   final TextEditingController _plateController = TextEditingController();
   final TextEditingController _localizacaoController = TextEditingController();
+  final TextEditingController _categoryController = TextEditingController();
 
   String selectedBrand = 'Toyota';
   String selectedClass = 'Económico';
@@ -53,7 +56,59 @@ class _VehicleRegistrationScreenState extends State<VehicleRegistrationScreen> {
   final List<String> transmissions = ['Manual', 'Automática', 'CVT'];
 
   List<XFile> _selectedImages = [];
+  List<String> _existingImageUrls = [];
   final ImagePicker _picker = ImagePicker();
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.car != null) {
+      // Preencher campos com dados do carro
+      selectedBrand = carBrands.firstWhere(
+        (b) => b.toLowerCase() == widget.car!.marca.toLowerCase(),
+        orElse: () => carBrands.first,
+      );
+      _modelController.text = widget.car!.modelo;
+      _yearController.text = widget.car!.ano.toString();
+      _dailyPriceController.text = widget.car!.precoPorDia.toString();
+      _weeklyPriceController.text = widget.car!.precoPorSemana.toString();
+      _monthlyPriceController.text = widget.car!.precoPorMes.toString();
+      selectedClass = carClasses.firstWhere(
+        (c) => c.toLowerCase() == widget.car!.classe.toLowerCase(),
+        orElse: () => carClasses.first,
+      );
+      _descriptionController.text = widget.car!.descricao;
+      // Cor
+      selectedColor = colors.firstWhere(
+        (c) => c.toLowerCase() == widget.car!.cor.toLowerCase(),
+        orElse: () => widget.car!.cor,
+      );
+      // Combustível
+      selectedFuelType = fuelTypes.firstWhere(
+        (f) => f.toLowerCase() == widget.car!.combustivel.toLowerCase(),
+        orElse: () => widget.car!.combustivel,
+      );
+      _mileageController.text = widget.car!.quilometragem.toString();
+      selectedSeats = widget.car!.lugares;
+      selectedTransmission = transmissions.firstWhere(
+        (t) => t.toLowerCase() == widget.car!.transmissao.toString().toLowerCase(),
+        orElse: () => transmissions.first,
+      );
+      isAvailable = widget.car!.disponibilidade;
+      hasInsurance = widget.car!.seguro == 'true' || widget.car!.seguro == true;
+      _plateController.text = widget.car!.placa;
+      _localizacaoController.text = widget.car!.localizacao;
+      _serviceType = _serviceTypes.firstWhere(
+        (s) => s.toLowerCase() == widget.car!.serviceType.toLowerCase(),
+        orElse: () => _serviceTypes.first,
+      );
+      _categoryController.text = widget.car!.categorias ?? '';
+      // Imagens existentes
+      if (widget.car!.images.isNotEmpty) {
+        _existingImageUrls = List<String>.from(widget.car!.images);
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -227,7 +282,7 @@ class _VehicleRegistrationScreenState extends State<VehicleRegistrationScreen> {
             ],
           ),
           SizedBox(height: 16),
-          _selectedImages.isEmpty
+          (_existingImageUrls.isEmpty && _selectedImages.isEmpty)
               ? Container(
                   height: 120,
                   decoration: BoxDecoration(
@@ -253,36 +308,75 @@ class _VehicleRegistrationScreenState extends State<VehicleRegistrationScreen> {
                   height: 120,
                   child: ListView.separated(
                     scrollDirection: Axis.horizontal,
-                    itemCount: _selectedImages.length,
+                    itemCount: _existingImageUrls.length + _selectedImages.length,
                     separatorBuilder: (_, __) => SizedBox(width: 12),
                     itemBuilder: (context, index) {
-                      return Stack(
-                        children: [
-                          ClipRRect(
-                            borderRadius: BorderRadius.circular(12),
-                            child: _buildImageWidget(_selectedImages[index]),
-                          ),
-                          Positioned(
-                            top: 4,
-                            right: 4,
-                            child: GestureDetector(
-                              onTap: () {
-                                setState(() {
-                                  _selectedImages.removeAt(index);
-                                });
-                              },
-                              child: Container(
-                                padding: EdgeInsets.all(4),
-                                decoration: BoxDecoration(
-                                  color: Colors.black54,
-                                  shape: BoxShape.circle,
-                                ),
-                                child: Icon(Icons.close, color: Colors.white, size: 16),
+                      if (index < _existingImageUrls.length) {
+                        // Imagem existente (URL)
+                        final url = _existingImageUrls[index];
+                        return Stack(
+                          children: [
+                            ClipRRect(
+                              borderRadius: BorderRadius.circular(12),
+                              child: Image.network(
+                                url,
+                                width: 120,
+                                height: 120,
+                                fit: BoxFit.cover,
                               ),
                             ),
-                          ),
-                        ],
-                      );
+                            Positioned(
+                              top: 4,
+                              right: 4,
+                              child: GestureDetector(
+                                onTap: () {
+                                  setState(() {
+                                    _existingImageUrls.removeAt(index);
+                                  });
+                                },
+                                child: Container(
+                                  padding: EdgeInsets.all(4),
+                                  decoration: BoxDecoration(
+                                    color: Colors.black54,
+                                    shape: BoxShape.circle,
+                                  ),
+                                  child: Icon(Icons.close, color: Colors.white, size: 16),
+                                ),
+                              ),
+                            ),
+                          ],
+                        );
+                      } else {
+                        // Imagem nova (XFile)
+                        final imgIndex = index - _existingImageUrls.length;
+                        return Stack(
+                          children: [
+                            ClipRRect(
+                              borderRadius: BorderRadius.circular(12),
+                              child: _buildImageWidget(_selectedImages[imgIndex]),
+                            ),
+                            Positioned(
+                              top: 4,
+                              right: 4,
+                              child: GestureDetector(
+                                onTap: () {
+                                  setState(() {
+                                    _selectedImages.removeAt(imgIndex);
+                                  });
+                                },
+                                child: Container(
+                                  padding: EdgeInsets.all(4),
+                                  decoration: BoxDecoration(
+                                    color: Colors.black54,
+                                    shape: BoxShape.circle,
+                                  ),
+                                  child: Icon(Icons.close, color: Colors.white, size: 16),
+                                ),
+                              ),
+                            ),
+                          ],
+                        );
+                      }
                     },
                   ),
                 ),
@@ -856,11 +950,9 @@ class _VehicleRegistrationScreenState extends State<VehicleRegistrationScreen> {
     if (!_formKey.currentState!.validate()) {
       return;
     }
-
     setState(() {
       _isLoading = true;
     });
-
     if (_serviceType.isEmpty) {
       setState(() {
         _isLoading = false;
@@ -873,7 +965,6 @@ class _VehicleRegistrationScreenState extends State<VehicleRegistrationScreen> {
       );
       return;
     }
-
     // Validar imagens antes do upload
     if (_selectedImages.isNotEmpty) {
       List<XFile> validImages = [];
@@ -891,7 +982,6 @@ class _VehicleRegistrationScreenState extends State<VehicleRegistrationScreen> {
       }
       _selectedImages = validImages;
     }
-
     Map<String, dynamic> vehicleData = {
       'marca': selectedBrand,
       'modelo': _modelController.text.trim(),
@@ -910,38 +1000,55 @@ class _VehicleRegistrationScreenState extends State<VehicleRegistrationScreen> {
       'seguro': hasInsurance,
       'placa': _plateController.text.trim(),
       'localizacao': _localizacaoController.text.trim(),
-      'categorias': '',
+      'categorias': _categoryController.text.trim(),
       'featured': false,
       'serviceType': _serviceType,
+      'existingImages': _existingImageUrls, // Envie as imagens mantidas
     };
-
     try {
-      // Usar o novo serviço que inclui upload de imagens
-      final result = await OwnerServiceImageUpload.createCarWithImages(
-        vehicleData,
-        _selectedImages,
-      );
-
-      if (mounted) {
-        String message = 'Veículo cadastrado com sucesso!';
-        if (_selectedImages.isNotEmpty) {
-          message += ' ${result['uploaded_images']}/${result['total_images']} imagens enviadas.';
-        }
-        
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(message),
-            backgroundColor: Color(0xFF2F3E3A),
-            duration: Duration(seconds: 3),
-          ),
+      if (widget.car != null) {
+        // PATCH para atualizar carro existente
+        await OwnerServiceImageUpload.updateCarWithImages(
+          widget.car!.id,
+          vehicleData,
+          _selectedImages,
         );
-        Navigator.pop(context);
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Veículo atualizado com sucesso!'),
+              backgroundColor: Color(0xFF2F3E3A),
+              duration: Duration(seconds: 3),
+            ),
+          );
+          Navigator.pop(context);
+        }
+      } else {
+        // Criação normal
+        final result = await OwnerServiceImageUpload.createCarWithImages(
+          vehicleData,
+          _selectedImages,
+        );
+        if (mounted) {
+          String message = 'Veículo cadastrado com sucesso!';
+          if (_selectedImages.isNotEmpty) {
+            message += ' ${result['uploaded_images']}/${result['total_images']} imagens enviadas.';
+          }
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(message),
+              backgroundColor: Color(0xFF2F3E3A),
+              duration: Duration(seconds: 3),
+            ),
+          );
+          Navigator.pop(context);
+        }
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Erro ao cadastrar veículo: $e'),
+            content: Text('Erro ao cadastrar/atualizar veículo: $e'),
             backgroundColor: Colors.red,
             duration: Duration(seconds: 4),
           ),
@@ -967,6 +1074,7 @@ class _VehicleRegistrationScreenState extends State<VehicleRegistrationScreen> {
     _mileageController.dispose();
     _plateController.dispose();
     _localizacaoController.dispose();
+    _categoryController.dispose();
     super.dispose();
   }
 }

@@ -222,4 +222,75 @@ extension OwnerServiceImageUpload on OwnerService {
       throw Exception('Erro ao criar veículo com imagens: $e');
     }
   }
+
+  /// Atualizar veículo existente com PATCH e upload de imagens
+  static Future<void> updateCarWithImages(
+    String carId,
+    Map<String, dynamic> vehicleData,
+    List<XFile> imageFiles,
+  ) async {
+    try {
+      var request = http.MultipartRequest(
+        'PATCH',
+        Uri.parse('${baseUrl}/owner/car/$carId'),
+      );
+      final prefs = await SharedPreferences.getInstance();
+      final token = prefs.getString('auth_token');
+      if (token != null) {
+        request.headers['Authorization'] = 'Bearer $token';
+      }
+      request.headers['Content-Type'] = 'multipart/form-data';
+      vehicleData.forEach((key, value) {
+        request.fields[key] = value.toString();
+      });
+      // Enviar existingImages como JSON string
+      if (vehicleData['existingImages'] != null) {
+        request.fields['existingImages'] = json.encode(vehicleData['existingImages']);
+      }
+      for (int i = 0; i < imageFiles.length; i++) {
+        http.MultipartFile multipartFile;
+        String fileName = kIsWeb ? imageFiles[i].name : imageFiles[i].path;
+        String mime = '';
+        if (fileName.toLowerCase().endsWith('.png')) {
+          mime = 'image/png';
+        } else if (fileName.toLowerCase().endsWith('.jpg') || fileName.toLowerCase().endsWith('.jpeg')) {
+          mime = 'image/jpeg';
+        } else if (fileName.toLowerCase().endsWith('.webp')) {
+          mime = 'image/webp';
+        } else if (fileName.toLowerCase().endsWith('.gif')) {
+          mime = 'image/gif';
+        } else if (fileName.toLowerCase().endsWith('.bmp')) {
+          mime = 'image/bmp';
+        } else if (fileName.toLowerCase().endsWith('.tiff')) {
+          mime = 'image/tiff';
+        } else {
+          mime = 'image/jpeg';
+        }
+        if (kIsWeb) {
+          Uint8List bytes = await imageFiles[i].readAsBytes();
+          multipartFile = http.MultipartFile.fromBytes(
+            'images',
+            bytes,
+            filename: 'vehicle_image_$i.jpg',
+            contentType: MediaType.parse(mime),
+          );
+        } else {
+          multipartFile = await http.MultipartFile.fromPath(
+            'images',
+            imageFiles[i].path,
+            filename: 'vehicle_image_$i.jpg',
+            contentType: MediaType.parse(mime),
+          );
+        }
+        request.files.add(multipartFile);
+      }
+      var response = await request.send();
+      if (response.statusCode != 200) {
+        var errorData = await response.stream.bytesToString();
+        throw Exception('Erro ao atualizar veículo: ${response.statusCode} $errorData');
+      }
+    } catch (e) {
+      throw Exception('Erro ao atualizar veículo: $e');
+    }
+  }
 }

@@ -339,6 +339,18 @@ class CarService {
     }
   }
 
+  static Future<void> deleteCar(String carId) async {
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString('auth_token');
+    final response = await http.delete(
+      Uri.parse('$baseUrl/owner/car/$carId'),
+      headers: {'Authorization': 'Bearer $token'},
+    );
+    if (response.statusCode != 200 && response.statusCode != 204) {
+      throw Exception('Erro ao deletar o carro');
+    }
+  }
+
   // Handle Dio errors
   static String _handleDioError(DioException e) {
     switch (e.type) {

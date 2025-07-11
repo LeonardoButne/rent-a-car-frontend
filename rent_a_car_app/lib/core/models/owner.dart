@@ -122,8 +122,8 @@ class OwnerClient {
 
 class OwnerReservation {
   final String id;
-  final OwnerCar car;
-  final OwnerClient client;
+  final OwnerCar? car;
+  final OwnerClient? client;
   final DateTime startDate;
   final DateTime endDate;
   final String status;
@@ -147,8 +147,8 @@ class OwnerReservation {
     }
     return OwnerReservation(
       id: json['id'],
-      car: OwnerCar.fromJson(json['car']),
-      client: OwnerClient.fromJson(json['client']),
+      car: json['car'] != null ? OwnerCar.fromJson(json['car']) : null,
+      client: json['client'] != null ? OwnerClient.fromJson(json['client']) : null,
       startDate: DateTime.parse(json['startDate']),
       endDate: DateTime.parse(json['endDate']),
       status: json['status'],
