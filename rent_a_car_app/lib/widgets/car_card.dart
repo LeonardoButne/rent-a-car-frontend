@@ -56,15 +56,17 @@ class CarCard extends StatelessWidget {
         children: [
           ClipRRect(
             borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
-            child: Image.asset(
-              car.images.first,
-              width: double.infinity,
-              height: double.infinity,
-              fit: BoxFit.cover,
-              errorBuilder: (context, error, stackTrace) {
-                return const Center(child: Icon(Icons.broken_image, size: 80));
-              },
-            ),
+            child: car.hasImages
+                ? Image.network(
+                    car.firstImageUrlFixed,
+                    width: double.infinity,
+                    height: double.infinity,
+                    fit: BoxFit.cover,
+                    errorBuilder: (context, error, stackTrace) {
+                      return const Center(child: Icon(Icons.broken_image, size: 80));
+                    },
+                  )
+                : const Center(child: Icon(Icons.broken_image, size: 80)),
           ),
           Positioned(
             top: 12,

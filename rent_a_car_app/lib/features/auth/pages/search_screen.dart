@@ -18,9 +18,13 @@ class _SearchScreenState extends State<SearchScreen> {
   List<ApiCar> searchResults = [];
   List<ApiCar> recommendedCars = [];
   List<ApiCar> popularCars = [];
+  List<ApiCar> allCars = [];
   List<Brand> brands = [];
   String? selectedFilter;
   bool isSearching = false;
+  bool isLoading = true;
+  bool hasError = false;
+  String? errorMessage;
   Set<String> favoriteCars = {};
 
   @override
@@ -37,12 +41,68 @@ class _SearchScreenState extends State<SearchScreen> {
   }
 
   /// Carrega dados iniciais da tela de busca
-  void _loadInitialData() {
-    setState(() {
-      recommendedCars = CarService.getRecommendedCars();
-      popularCars = CarService.getPopularCars();
-      brands = CarService.getBrands();
-    });
+  Future<void> _loadInitialData() async {
+    try {
+      setState(() {
+        isLoading = true;
+        hasError = false;
+        errorMessage = null;
+      });
+
+      // Carregar todos os carros da API
+      final cars = await CarService.getAllCars();
+      
+      if (mounted) {
+        setState(() {
+          allCars = cars;
+          recommendedCars = _getRecommendedCars(cars);
+          popularCars = _getPopularCars(cars);
+          brands = _getBrands(cars);
+          isLoading = false;
+          hasError = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          isLoading = false;
+          hasError = true;
+          errorMessage = e.toString();
+        });
+      }
+    }
+  }
+
+  /// Obtém carros recomendados (featured)
+  List<ApiCar> _getRecommendedCars(List<ApiCar> cars) {
+    return cars.where((car) => car.featured).take(6).toList();
+  }
+
+  /// Obtém carros populares (mais recentes)
+  List<ApiCar> _getPopularCars(List<ApiCar> cars) {
+    var sortedCars = List<ApiCar>.from(cars);
+    sortedCars.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+    return sortedCars.take(8).toList();
+  }
+
+  /// Obtém marcas únicas dos carros
+  List<Brand> _getBrands(List<ApiCar> cars) {
+    final uniqueBrands = <String, Brand>{};
+
+    for (var car in cars) {
+      if (!uniqueBrands.containsKey(car.marca)) {
+        uniqueBrands[car.marca] = Brand(
+          id: car.marca.toLowerCase().replaceAll(' ', '_'),
+          name: car.marca,
+          slug: car.marca.toLowerCase().replaceAll(' ', '_'),
+          logoUrl: 'assets/brands/${car.marca.toLowerCase().replaceAll(' ', '_')}_logo.png',
+        );
+      }
+    }
+
+    final brandsList = uniqueBrands.values.toList();
+    brandsList.sort((a, b) => a.name.compareTo(b.name));
+    return brandsList;
   }
 
   void _openFilters() async {
@@ -85,8 +145,23 @@ class _SearchScreenState extends State<SearchScreen> {
 
     setState(() {
       isSearching = true;
-      searchResults = CarService.searchCars(query);
+      searchResults = _searchCars(query);
     });
+  }
+
+  /// Busca carros por termo
+  List<ApiCar> _searchCars(String query) {
+    final term = query.toLowerCase();
+    return allCars.where((car) =>
+      car.marca.toLowerCase().contains(term) ||
+      car.modelo.toLowerCase().contains(term) ||
+      car.cor.toLowerCase().contains(term) ||
+      car.localizacao.toLowerCase().contains(term) ||
+      car.descricao.toLowerCase().contains(term) ||
+      car.classe.toLowerCase().contains(term) ||
+      car.categorias.toLowerCase().contains(term) ||
+      car.placa.toLowerCase().contains(term)
+    ).toList();
   }
 
   /// filtro por marca
@@ -94,11 +169,14 @@ class _SearchScreenState extends State<SearchScreen> {
     setState(() {
       if (selectedFilter == brandSlug) {
         selectedFilter = null;
-        recommendedCars = CarService.getRecommendedCars();
-        popularCars = CarService.getPopularCars();
+        recommendedCars = _getRecommendedCars(allCars);
+        popularCars = _getPopularCars(allCars);
       } else {
         selectedFilter = brandSlug;
-        final filteredCars = CarService.getCarsByBrand(brandSlug);
+        final brandName = brandSlug.replaceAll('_', ' ');
+        final filteredCars = allCars.where((car) => 
+          car.marca.toLowerCase() == brandName.toLowerCase()
+        ).toList();
         recommendedCars = filteredCars.take(2).toList();
         popularCars = filteredCars.skip(2).toList();
       }
@@ -125,12 +203,60 @@ class _SearchScreenState extends State<SearchScreen> {
           children: [
             _buildHeader(),
             _buildSearchBar(),
-            if (!isSearching) _buildFilters(),
+            if (!isSearching && !isLoading) _buildFilters(),
             Expanded(
-              child: isSearching ? _buildSearchResults() : _buildMainContent(),
+              child: isLoading 
+                  ? _buildLoadingState()
+                  : hasError
+                      ? _buildErrorState()
+                      : isSearching 
+                          ? _buildSearchResults() 
+                          : _buildMainContent(),
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildLoadingState() {
+    return const Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          CircularProgressIndicator(color: Colors.orange),
+          SizedBox(height: 16),
+          Text(
+            'Carregando carros...',
+            style: TextStyle(fontSize: 16, color: Colors.grey),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildErrorState() {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(Icons.error_outline, size: 64, color: Colors.red[400]),
+          SizedBox(height: 16),
+          Text(
+            errorMessage ?? 'Ocorreu um erro ao carregar os carros.',
+            textAlign: TextAlign.center,
+            style: TextStyle(fontSize: 18, color: Colors.red[600]),
+          ),
+          SizedBox(height: 16),
+          ElevatedButton(
+            onPressed: _loadInitialData,
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.black,
+              foregroundColor: Colors.white,
+            ),
+            child: const Text('Tentar novamente'),
+          ),
+        ],
       ),
     );
   }
@@ -153,7 +279,14 @@ class _SearchScreenState extends State<SearchScreen> {
             style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
           ),
           const Spacer(),
-          const Icon(Icons.more_horiz),
+          if (!isLoading)
+            GestureDetector(
+              onTap: _loadInitialData,
+              child: Container(
+                padding: const EdgeInsets.all(8),
+                child: const Icon(Icons.refresh, size: 20),
+              ),
+            ),
         ],
       ),
     );
@@ -248,35 +381,21 @@ class _SearchScreenState extends State<SearchScreen> {
       onTap: () => _applyBrandFilter(brand.slug),
       child: Container(
         margin: const EdgeInsets.only(right: 12),
-        child: Column(
-          children: [
-            Container(
-              width: 50,
-              height: 50,
-              decoration: BoxDecoration(
-                color: isSelected ? Colors.black : Colors.white,
-                borderRadius: BorderRadius.circular(25),
-                border: Border.all(
-                  color: isSelected ? Colors.black : Colors.grey[300]!,
-                ),
-              ),
-              child: Padding(
-                padding: const EdgeInsets.all(8.0),
-                child: Image.asset(
-                  brand.logoUrl,
-                  fit: BoxFit.contain,
-                  errorBuilder: (context, error, stackTrace) {
-                    return const Icon(Icons.broken_image, size: 24);
-                  },
-                ),
-              ),
-            ),
-            const SizedBox(height: 4),
-            Text(
-              brand.name,
-              style: TextStyle(fontSize: 10, color: Colors.grey[600]),
-            ),
-          ],
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+        decoration: BoxDecoration(
+          color: isSelected ? Colors.black : Colors.white,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(
+            color: isSelected ? Colors.black : Colors.grey[300]!,
+          ),
+        ),
+        child: Text(
+          brand.name,
+          style: TextStyle(
+            color: isSelected ? Colors.white : Colors.black,
+            fontWeight: FontWeight.w500,
+            fontSize: 14,
+          ),
         ),
       ),
     );
