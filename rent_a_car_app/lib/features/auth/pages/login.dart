@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:rent_a_car_app/features/auth/pages/forgot_password_screen.dart';
 import 'package:rent_a_car_app/features/auth/pages/register.dart';
 import 'package:rent_a_car_app/features/auth/pages/otp_verification_screen.dart';
 import 'package:rent_a_car_app/core/services/api_service.dart';
@@ -44,7 +45,9 @@ class _LoginState extends State<Login> {
         // Login direto
         final prefs = await SharedPreferences.getInstance();
         await prefs.setString('auth_token', token);
-        await initFCM(context); // <-- Adicionado para garantir envio do deviceToken
+        await initFCM(
+          context,
+        ); // <-- Adicionado para garantir envio do deviceToken
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(builder: (context) => const HomeScreen()),
@@ -95,7 +98,8 @@ class _LoginState extends State<Login> {
           padding: const EdgeInsets.symmetric(horizontal: 24.0),
           child: ConstrainedBox(
             constraints: BoxConstraints(
-              minHeight: MediaQuery.of(context).size.height -
+              minHeight:
+                  MediaQuery.of(context).size.height -
                   MediaQuery.of(context).padding.top -
                   MediaQuery.of(context).padding.bottom,
             ),
@@ -168,7 +172,10 @@ class _LoginState extends State<Login> {
                       controller: _emailController,
                       decoration: InputDecoration(
                         hintText: 'Email',
-                        hintStyle: TextStyle(color: Colors.grey[500], fontSize: 16),
+                        hintStyle: TextStyle(
+                          color: Colors.grey[500],
+                          fontSize: 16,
+                        ),
                         border: InputBorder.none,
                         contentPadding: EdgeInsets.symmetric(
                           horizontal: 16,
@@ -192,7 +199,10 @@ class _LoginState extends State<Login> {
                       obscureText: _obscurePassword,
                       decoration: InputDecoration(
                         hintText: 'Palavra-passe',
-                        hintStyle: TextStyle(color: Colors.grey[500], fontSize: 16),
+                        hintStyle: TextStyle(
+                          color: Colors.grey[500],
+                          fontSize: 16,
+                        ),
                         border: InputBorder.none,
                         contentPadding: EdgeInsets.symmetric(
                           horizontal: 16,
@@ -234,17 +244,28 @@ class _LoginState extends State<Login> {
                           ),
                           Text(
                             'Lembrar-me',
-                            style: TextStyle(color: Colors.grey[600], fontSize: 14),
+                            style: TextStyle(
+                              color: Colors.grey[600],
+                              fontSize: 14,
+                            ),
                           ),
                         ],
                       ),
                       TextButton(
                         onPressed: () {
-                          // Acção para esqueceu a palavra-passe
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => ForgotPasswordScreen(),
+                            ),
+                          );
                         },
                         child: Text(
                           'Esqueceu a palavra-passe',
-                          style: TextStyle(color: Colors.grey[600], fontSize: 14),
+                          style: TextStyle(
+                            color: Colors.grey[600],
+                            fontSize: 14,
+                          ),
                         ),
                       ),
                     ],
@@ -266,21 +287,21 @@ class _LoginState extends State<Login> {
                       ),
                       child: _isLoading
                           ? SizedBox(
-                        height: 20,
-                        width: 20,
-                        child: CircularProgressIndicator(
-                          color: Colors.white,
-                          strokeWidth: 2,
-                        ),
-                      )
+                              height: 20,
+                              width: 20,
+                              child: CircularProgressIndicator(
+                                color: Colors.white,
+                                strokeWidth: 2,
+                              ),
+                            )
                           : Text(
-                        'Entrar',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
+                              'Entrar',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 16,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
                     ),
                   ),
 
@@ -309,9 +330,11 @@ class _LoginState extends State<Login> {
                     height: 56,
                     child: OutlinedButton(
                       onPressed: () {
-                         Navigator.push(
-                            context,
-                            MaterialPageRoute(builder: (context) => const Register()),
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const Register(),
+                          ),
                         );
                       },
                       style: OutlinedButton.styleFrom(
@@ -341,7 +364,10 @@ class _LoginState extends State<Login> {
                         padding: EdgeInsets.symmetric(horizontal: 16),
                         child: Text(
                           'Ou',
-                          style: TextStyle(color: Colors.grey[500], fontSize: 14),
+                          style: TextStyle(
+                            color: Colors.grey[500],
+                            fontSize: 14,
+                          ),
                         ),
                       ),
                       Expanded(child: Divider(color: Colors.grey[300])),
@@ -398,13 +424,18 @@ class _LoginState extends State<Login> {
                       children: [
                         Text(
                           'Não tem uma conta? ',
-                          style: TextStyle(color: Colors.grey[600], fontSize: 14),
+                          style: TextStyle(
+                            color: Colors.grey[600],
+                            fontSize: 14,
+                          ),
                         ),
                         GestureDetector(
                           onTap: () {
                             Navigator.push(
                               context,
-                              MaterialPageRoute(builder: (context) => Register()),
+                              MaterialPageRoute(
+                                builder: (context) => Register(),
+                              ),
                             );
                           },
                           child: Text(
