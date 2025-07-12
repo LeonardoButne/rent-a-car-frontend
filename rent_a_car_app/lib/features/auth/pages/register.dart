@@ -4,6 +4,7 @@ import 'package:rent_a_car_app/core/services/api_service.dart';
 import 'package:rent_a_car_app/core/utils/device_id.dart';
 import 'package:rent_a_car_app/features/auth/pages/login.dart';
 import '../../../fcm_initializer.dart';
+import 'package:dio/dio.dart';
 
 class Register extends StatefulWidget {
   const Register({super.key});
@@ -83,6 +84,32 @@ class _RegisterState extends State<Register> {
         });
       }
     } catch (e) {
+      // Novo tratamento para DioError
+      if (e is DioError) {
+        final data = e.response?.data;
+        if (data != null && data['otp_required'] == true) {
+          final fcmToken = await getFcmToken();
+          final snackBar = SnackBar(
+            content: Text('E-mail já cadastrado, mas ainda não verificado. Complete a verificação.'),
+            backgroundColor: Colors.orange,
+          );
+          if (context.mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(snackBar);
+          }
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => OTPVerificationScreen(
+                email: _emailController.text.trim(),
+                deviceId: fcmToken,
+                isLoginOtp: false,
+                infoMessage: 'E-mail já cadastrado, mas ainda não verificado. Complete a verificação.',
+              ),
+            ),
+          );
+          return;
+        }
+      }
       setState(() {
         _errorMessage = 'Erro ao cadastrar: ' + e.toString();
       });

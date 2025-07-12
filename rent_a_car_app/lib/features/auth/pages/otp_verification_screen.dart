@@ -10,12 +10,14 @@ class OTPVerificationScreen extends StatefulWidget {
   final String email;
   final String? deviceId;
   final bool isLoginOtp;
+  final String? infoMessage; // Novo parâmetro opcional
 
   const OTPVerificationScreen({
     Key? key,
     required this.email,
     this.deviceId,
     this.isLoginOtp = false,
+    this.infoMessage,
   }) : super(key: key);
 
   @override
@@ -258,6 +260,23 @@ class _OTPVerificationScreenState extends State<OTPVerificationScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            if (widget.infoMessage != null) ...[
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(12),
+                margin: const EdgeInsets.only(bottom: 16),
+                decoration: BoxDecoration(
+                  color: Colors.orange[50],
+                  border: Border.all(color: Colors.orange),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Text(
+                  widget.infoMessage!,
+                  style: const TextStyle(color: Colors.orange, fontSize: 15),
+                  textAlign: TextAlign.center,
+                ),
+              ),
+            ],
             const SizedBox(height: 40),
             const Text(
               'Inserir código de verificação',
@@ -269,9 +288,25 @@ class _OTPVerificationScreenState extends State<OTPVerificationScreen> {
             ),
             const SizedBox(height: 16),
             Text(
-              'Enviámos um código para: ${_maskEmail(widget.email)}',
+              'Enviamos um código para: ${_maskEmail(widget.email)}',
               style: const TextStyle(fontSize: 16, color: Colors.grey),
             ),
+            if (widget.isLoginOtp)
+              const Padding(
+                padding: EdgeInsets.only(top: 8.0),
+                child: Text(
+                  'Confirme seu e-mail para acessar sua conta.',
+                  style: TextStyle(fontSize: 14, color: Colors.orange),
+                ),
+              ),
+            if (!widget.isLoginOtp)
+              const Padding(
+                padding: EdgeInsets.only(top: 8.0),
+                child: Text(
+                  'Finalize seu cadastro confirmando o e-mail.',
+                  style: TextStyle(fontSize: 14, color: Colors.orange),
+                ),
+              ),
             const SizedBox(height: 40),
             Center(
               child: Pinput(
@@ -287,44 +322,6 @@ class _OTPVerificationScreenState extends State<OTPVerificationScreen> {
               ),
             ),
             const SizedBox(height: 40),
-            SizedBox(
-              width: double.infinity,
-              height: 56,
-              child: ElevatedButton(
-                onPressed: _isLoading
-                    ? null
-                    : () {
-                        if (_pinController.text.length == 6) {
-                          _onPinCompleted(_pinController.text);
-                        }
-                      },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.black,
-                  foregroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(28),
-                  ),
-                  elevation: 0,
-                ),
-                child: _isLoading
-                    ? const SizedBox(
-                        height: 20,
-                        width: 20,
-                        child: CircularProgressIndicator(
-                          color: Colors.white,
-                          strokeWidth: 2,
-                        ),
-                      )
-                    : const Text(
-                        'Continuar',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-              ),
-            ),
-            const SizedBox(height: 24),
             Center(
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
@@ -334,13 +331,14 @@ class _OTPVerificationScreenState extends State<OTPVerificationScreen> {
                     style: TextStyle(color: Colors.grey, fontSize: 14),
                   ),
                   GestureDetector(
-                    onTap: _resendOTP,
+                    onTap: _isLoading ? null : _resendOTP,
                     child: const Text(
                       'Reenviar.',
                       style: TextStyle(
                         color: Colors.black,
                         fontSize: 14,
                         fontWeight: FontWeight.w600,
+                        decoration: TextDecoration.underline,
                       ),
                     ),
                   ),
@@ -348,7 +346,6 @@ class _OTPVerificationScreenState extends State<OTPVerificationScreen> {
               ),
             ),
             const Spacer(),
-            // loding na parte inferior
             if (_isLoading)
               const Center(
                 child: Text(
