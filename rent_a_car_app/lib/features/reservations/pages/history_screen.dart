@@ -684,8 +684,15 @@ class _HistoryScreenState extends State<HistoryScreen>
         filteredHistory = history.where((h) => h.ownerId == _userId).toList();
       }
 
-      final totalCars = filteredHistory.length;
-      final totalSpent = filteredHistory.fold<double>(
+      // Corrigir: considerar apenas reservas finalizadas, canceladas ou rejeitadas para as estatísticas
+      final statsHistory = filteredHistory.where((h) =>
+        h.status == RentalStatus.completed ||
+        h.status == RentalStatus.cancelled ||
+        h.status == RentalStatus.rejected
+      ).toList();
+
+      final totalCars = statsHistory.length;
+      final totalSpent = statsHistory.fold<double>(
         0,
         (sum, h) => sum + h.totalValue,
       );
@@ -720,7 +727,12 @@ class _HistoryScreenState extends State<HistoryScreen>
             .where((h) => h.status == RentalStatus.rejected)
             .toList();
       default:
-        return _history;
+        // Só mostra concluídos, cancelados e rejeitados no histórico
+        return _history.where((h) =>
+          h.status == RentalStatus.completed ||
+          h.status == RentalStatus.cancelled ||
+          h.status == RentalStatus.rejected
+        ).toList();
     }
   }
 

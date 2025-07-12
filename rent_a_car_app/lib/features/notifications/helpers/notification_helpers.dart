@@ -126,6 +126,8 @@ class NotificationNavigator {
   ) {
     switch (notification.type) {
       case 'reservation_request':
+        // Marcar todas as notificações relacionadas a reservas como lidas
+        _markReservationNotificationsAsRead(context);
         Navigator.pushNamed(
           context,
           '/owner-reservations',
@@ -177,6 +179,7 @@ class NotificationNavigator {
         
         // Filtrar notificações não lidas relacionadas a reservas
         final reservationNotificationTypes = [
+          'reservation_request', // adicionado aqui
           'payment', 'pickup', 'return', 'cancellation', 
           'reservation_approved', 'reservation_rejected'
         ];

@@ -91,8 +91,12 @@ class RentalHistory {
         return RentalStatus.ongoing;
       case 'rejected':
         return RentalStatus.rejected;
+      case 'pending':
+      case 'approved':
+      case 'active':
+        return RentalStatus.ongoing;
       default:
-        return RentalStatus.completed;
+        return RentalStatus.ongoing;
     }
   }
 

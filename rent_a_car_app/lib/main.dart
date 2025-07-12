@@ -16,6 +16,7 @@ import 'firebase_options.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await dotenv.load(fileName: ".env");
+    print('BASE_URL carregado: ${dotenv.env['BASE_URL']}');
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );

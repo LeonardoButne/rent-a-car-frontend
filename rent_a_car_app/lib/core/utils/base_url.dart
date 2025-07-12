@@ -1,4 +1,3 @@
-import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 
-/// Retorna a BASE_URL correta conforme a plataforma (web ou mobile)
-const String baseUrl = 'http://api.bxc.co.mz:4002/api'; 
+final String baseUrl = dotenv.env['BASE_URL'] ?? 'http://api.bxc.co.mz:4002/api'; 
