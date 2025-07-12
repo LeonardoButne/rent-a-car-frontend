@@ -220,12 +220,14 @@ class ApiCar {
 
   bool get hasImages => images.isNotEmpty;
 
-  // Método para obter URL da imagem corrigida (para emulador Android)
+  // Método para obter URL da imagem corrigida (para emulador Android e produção)
   String fixImageUrl(String url) {
     if (url.startsWith('http')) {
       return url.replaceFirst('localhost', kIsWeb ? 'localhost' : '10.0.2.2');
     } else {
-      return '$baseUrl/$url';
+      // Remove /api do baseUrl para imagens
+      final imageBaseUrl = baseUrl.replaceFirst('/api', '');
+      return '$imageBaseUrl$url';
     }
   }
 
