@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:rent_a_car_app/core/models/car_model.dart';
 import 'package:rent_a_car_app/core/services/car_service.dart';
+import 'package:rent_a_car_app/features/cars/pages/owner_car_details_screen.dart';
 import 'package:rent_a_car_app/features/cars/widgets/empty_my_cars_state.dart';
 import 'package:rent_a_car_app/features/cars/widgets/error_my_cars_state.dart';
 import 'package:rent_a_car_app/features/cars/widgets/my_car_list_item.dart';
@@ -63,12 +64,10 @@ class _MyCarsScreenState extends State<MyCarsScreen> {
   }
 
   void _navigateToDetails(ApiCar car) async {
-    // Navigator.push(
-    //   context,
-    //   MaterialPageRoute(
-    //     builder: (context) => CarDetailsScreen(car: car),
-    //   ),
-    // );
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => OwnerCarDetailsScreen()),
+    );
 
     // Por enquanto, mostra um SnackBar
     ScaffoldMessenger.of(context).showSnackBar(
